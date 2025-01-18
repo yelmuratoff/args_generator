@@ -48,7 +48,9 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
     }
 
     // Collect final instance fields and constructor parameters.
-    final fields = classElement.fields.where((field) => !field.isStatic && field.isFinal).toList();
+    final fields = classElement.fields
+        .where((field) => !field.isStatic && field.isFinal)
+        .toList();
     final parameters = constructor.parameters;
 
     // Generate constructor parameters for the arguments class.

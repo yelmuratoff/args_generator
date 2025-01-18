@@ -17,7 +17,8 @@ class TypeHelperUri extends TypeHelper {
   /// Returns:
   /// `true` if the [type] is assignable to `Uri`; otherwise, `false`.
   @override
-  bool matchesType(DartType type) => const TypeChecker.fromRuntime(Uri).isAssignableFromType(type);
+  bool matchesType(DartType type) =>
+      const TypeChecker.fromRuntime(Uri).isAssignableFromType(type);
 
   /// Decodes a `Uri` value from the provided arguments.
   ///

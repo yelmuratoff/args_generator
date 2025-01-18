@@ -37,7 +37,8 @@ extension DartTypeExtension on DartType {
   ///
   /// Returns:
   /// `true` if this type is nullable; otherwise, `false`.
-  bool get isNullableType => this is DynamicType || nullabilitySuffix == NullabilitySuffix.question;
+  bool get isNullableType =>
+      this is DynamicType || nullabilitySuffix == NullabilitySuffix.question;
 
   /// Checks if this type behaves like `dynamic`.
   ///
@@ -46,7 +47,8 @@ extension DartTypeExtension on DartType {
   ///
   /// Returns:
   /// `true` if this type is like `dynamic`; otherwise, `false`.
-  bool get isLikeDynamic => (isDartCoreObject && isNullableType) || this is DynamicType;
+  bool get isLikeDynamic =>
+      (isDartCoreObject && isNullableType) || this is DynamicType;
 
   /// Retrieves all [DartType] implementations, including those that this type
   /// implements, mixes-in, and extends, starting with this type itself.

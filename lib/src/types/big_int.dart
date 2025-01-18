@@ -17,7 +17,8 @@ class TypeHelperBigInt extends TypeHelper {
   /// Returns:
   /// `true` if the [type] is assignable to `BigInt`; otherwise, `false`.
   @override
-  bool matchesType(DartType type) => const TypeChecker.fromRuntime(BigInt).isAssignableFromType(type);
+  bool matchesType(DartType type) =>
+      const TypeChecker.fromRuntime(BigInt).isAssignableFromType(type);
 
   /// Decodes a `BigInt` value from the provided arguments.
   ///

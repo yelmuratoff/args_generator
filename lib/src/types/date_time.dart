@@ -17,7 +17,8 @@ class TypeHelperDateTime extends TypeHelper {
   /// Returns:
   /// `true` if the [type] is assignable to `DateTime`; otherwise, `false`.
   @override
-  bool matchesType(DartType type) => const TypeChecker.fromRuntime(DateTime).isAssignableFromType(type);
+  bool matchesType(DartType type) =>
+      const TypeChecker.fromRuntime(DateTime).isAssignableFromType(type);
 
   /// Decodes a `DateTime` value from the provided arguments.
   ///

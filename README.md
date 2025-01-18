@@ -1,11 +1,14 @@
 
 # Page Args Generator
 
-![version](https://img.shields.io/badge/version-0.0.1-blue)
+![version](https://img.shields.io/badge/version-0.0.2-blue)
 ![sdk](https://img.shields.io/badge/sdk-%5E3.6.0-blue)
 ![build_runner](https://img.shields.io/badge/build_runner-%5E2.4.14-blue)
 
-**Page Args Generator** is a Dart library designed to simplify the management of arguments passed between pages in Flutter applications. By leveraging code generation, this package creates companion argument classes for pages, ensuring type safety and reducing boilerplate.
+
+**Args Generator** is a Dart library designed to simplify the management of arguments passed between pages in Flutter applications. By leveraging code generation, this package creates companion argument classes for pages, ensuring type safety and reducing boilerplate.
+
+In the future, the library will be rewritten to utilize Dart macros, further enhancing performance, reducing code complexity, and integrating more seamlessly with the Dart ecosystem.
 
 ## Features
 
@@ -22,7 +25,7 @@ Add the following dependencies to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  args_generator: ^0.0.1
+  args_generator: ^0.0.2
 
 dev_dependencies:
   build_runner: ^2.4.14

@@ -17,7 +17,8 @@ class TypeHelperIterable extends TypeHelper {
   /// Returns:
   /// `true` if the [type] is assignable to `Iterable`; otherwise, `false`.
   @override
-  bool matchesType(DartType type) => const TypeChecker.fromRuntime(Iterable).isAssignableFromType(type);
+  bool matchesType(DartType type) =>
+      const TypeChecker.fromRuntime(Iterable).isAssignableFromType(type);
 
   /// Decodes an `Iterable` value from the provided arguments.
   ///
