@@ -1,3 +1,7 @@
+## 0.0.5
+
+- Added `super` fields to args.
+
 ## 0.0.4
 
 - `SharedPartBuilder` was replaced with `PartBuilder`.

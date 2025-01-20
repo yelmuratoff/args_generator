@@ -34,7 +34,8 @@ class TestPageArgs {
       this.defaultInt = 0,
       this.defaultNum = 0,
       this.defaultString = '',
-      this.defaultIterable = const []});
+      this.defaultIterable = const [],
+      this.key});
 
   final BigInt bigIntValue;
   final bool boolValue;
@@ -63,6 +64,7 @@ class TestPageArgs {
   final num? defaultNum;
   final String? defaultString;
   final List<String>? defaultIterable;
+  final String? key;
 
   /// Tries to parse the arguments from a [Map] and returns an instance of [TestPageArgs].
   /// Returns `null` if parsing fails.

@@ -2,8 +2,13 @@ import 'package:args_generator/args_generator.dart';
 
 part 'test_page.args.g.dart';
 
+class BasePage {
+  const BasePage({this.key});
+  final String? key;
+}
+
 @GenerateArgs()
-class TestPage {
+class TestPage extends BasePage {
   const TestPage({
     required this.bigIntValue,
     required this.boolValue,
@@ -32,6 +37,7 @@ class TestPage {
     this.defaultNum = 0,
     this.defaultString = '',
     this.defaultIterable = const [],
+    super.key,
   });
 
   final BigInt bigIntValue;

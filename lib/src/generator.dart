@@ -61,7 +61,7 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
     }).join(', ');
 
     // Generate field declarations for the arguments class.
-    final fieldDeclarations = fields.map((field) {
+    final fieldDeclarations = parameters.map((field) {
       return 'final ${field.type.getDisplayString()} ${field.name};';
     }).join('\n  ');
 
