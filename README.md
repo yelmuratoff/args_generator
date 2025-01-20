@@ -1,9 +1,16 @@
 
-# Page Args Generator
+# Args Generator
 
-![version](https://img.shields.io/badge/version-0.0.2-blue)
-![sdk](https://img.shields.io/badge/sdk-%5E3.6.0-blue)
-![build_runner](https://img.shields.io/badge/build_runner-%5E2.4.14-blue)
+<p align="center">
+  <a href="https://pub.dev/packages/args_generator"><img src="https://img.shields.io/pub/v/args_generator.svg" alt="Pub"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://github.com/yelmuratoff/args_generator"><img src="https://img.shields.io/github/stars/yelmuratoff/args_generator?style=social" alt="Pub"></a>
+</p>
+<p align="center">
+  <a href="https://pub.dev/packages/args_generator/score"><img src="https://img.shields.io/pub/likes/args_generator?logo=flutter" alt="Pub likes"></a>
+  <a href="https://pub.dev/packages/args_generator/score"><img src="https://img.shields.io/pub/popularity/args_generator?logo=flutter" alt="Pub popularity"></a>
+  <a href="https://pub.dev/packages/args_generator/score"><img src="https://img.shields.io/pub/points/args_generator?logo=flutter" alt="Pub points"></a>
+</p>
 
 
 **Args Generator** is a Dart library designed to simplify the management of arguments passed between pages in Flutter applications. By leveraging code generation, this package creates companion argument classes for pages, ensuring type safety and reducing boilerplate.
@@ -25,7 +32,7 @@ Add the following dependencies to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  args_generator: ^0.0.2
+  args_generator: ^0.0.3
 
 dev_dependencies:
   build_runner: ^2.4.14
@@ -160,7 +167,7 @@ class TestPageArgs {
 ## Supported Types
 
 - **Primitives**: `int`, `String`, `bool`, `double`, `num`
-- **Complex Types**: `BigInt`, `DateTime`, `Uri`, `List<String>`
+- **Complex Types**: `BigInt`, `DateTime`, `Uri`, `Iterable`
 - **Enums**: Custom enums with automatic mapping
 - **Optional Fields**: Support for nullable fields with `null` values
 - **Default Values**: Handle fields with default values
@@ -182,4 +189,4 @@ This package is licensed under the MIT License. See the LICENSE file for details
 
 ---
 
-Simplify your Flutter page argument management with **Page Args Generator**! 🚀
+Simplify your Flutter page argument management with **Args Generator**! 🚀
