@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'test_page_args.dart';
+part of 'test_page.dart';
 
 // **************************************************************************
 // PageArgsGenerator

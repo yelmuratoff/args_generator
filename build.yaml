@@ -2,7 +2,7 @@ builders:
   args_generator:
     import: "package:args_generator/args_generator.dart"
     builder_factories: ["pageArgsGenerator"]
-    build_extensions: {".dart": [".g.part"]}
+    build_extensions: {".dart": [".args.g.dart"]}
     auto_apply: dependents
-    build_to: cache
+    build_to: source
     applies_builders: ["source_gen|combining_builder"]

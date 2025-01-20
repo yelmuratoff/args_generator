@@ -32,7 +32,7 @@ Add the following dependencies to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  args_generator: ^0.0.3
+  args_generator: ^0.0.4
 
 dev_dependencies:
   build_runner: ^2.4.14
@@ -54,7 +54,7 @@ dart pub get
 ```dart
 import 'package:args_generator/args_generator.dart';
 
-part 'test_page_args.g.dart';
+part 'test_page.args.g.dart';
 
 @GenerateArgs()
 class TestPage {

@@ -24,10 +24,12 @@ export 'src/generator.dart';
 ///
 /// Returns:
 /// A [Builder] that integrates with the `build_runner` for source code generation.
-Builder pageArgsGenerator(BuilderOptions options) => SharedPartBuilder(
-      [PageArgsGenerator()],
-      'args_generator',
-    );
+Builder pageArgsGenerator(BuilderOptions options) {
+  return PartBuilder(
+    [PageArgsGenerator()],
+    '.args.g.dart',
+  );
+}
 
 /// Annotation used to mark classes for which page arguments should be generated.
 ///

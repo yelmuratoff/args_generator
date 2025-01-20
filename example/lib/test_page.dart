@@ -1,6 +1,6 @@
 import 'package:args_generator/args_generator.dart';
 
-part 'test_page_args.g.dart';
+part 'test_page.args.g.dart';
 
 @GenerateArgs()
 class TestPage {
