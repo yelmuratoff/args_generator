@@ -1,9 +1,27 @@
 import 'dart:async';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:build/build.dart';
-import 'package:source_gen/source_gen.dart';
-import 'package:args_generator/args_generator.dart';
 import 'package:args_generator/src/types/type_helper.dart';
+import 'package:source_gen/source_gen.dart';
+
+/// Creates a [Builder] for the `args_generator`.
+///
+/// The builder utilizes the [SharedPartBuilder] to perform code generation
+/// for classes annotated with the `@GenerateArgs` annotation. It relies on
+/// the [PageArgsGenerator] class to define the logic for generating the
+/// necessary code.
+///
+/// - [options]: Configuration options for the builder.
+///
+/// Returns:
+/// A [Builder] that integrates with the `build_runner` for source code generation.
+Builder pageArgsGenerator(BuilderOptions options) {
+  return PartBuilder(
+    [PageArgsGenerator()],
+    '.args.g.dart',
+  );
+}
 
 /// A generator that creates argument classes for pages annotated with `@GenerateArgs`.
 ///
@@ -47,7 +65,9 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
     }
 
     // Collect final instance fields and constructor parameters.
-    final fields = classElement.fields.where((field) => !field.isStatic && field.isFinal).toList();
+    final fields = classElement.fields
+        .where((field) => !field.isStatic && field.isFinal)
+        .toList();
     final parameters = constructor.parameters;
 
     // Generate constructor parameters for the arguments class.
@@ -78,7 +98,8 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
     for (final param in parameters) {
       for (final helper in TypeHelper.values) {
         if (helper.matchesType(param.type)) {
-          fieldDeclarations.add('final ${param.type.getDisplayString()} ${param.name};');
+          fieldDeclarations
+              .add('final ${param.type.getDisplayString()} ${param.name};');
         }
       }
     }

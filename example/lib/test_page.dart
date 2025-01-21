@@ -1,75 +1,42 @@
-import 'package:args_generator/args_generator.dart';
+import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:flutter/material.dart';
 
 part 'test_page.args.g.dart';
 
-class BasePage {
-  const BasePage({this.key});
-  final Key? key;
+void main() {
+  runApp(MaterialApp(
+      home: TestPage(
+    title: 'Test Page',
+  )));
 }
 
 @GenerateArgs()
-class TestPage extends BasePage {
+class TestPage extends StatefulWidget {
   const TestPage({
-    required this.bigIntValue,
-    required this.boolValue,
-    required this.dateTimeValue,
-    required this.doubleValue,
-    required this.typeValue,
-    required this.intValue,
-    required this.numValue,
-    required this.stringValue,
-    required this.uriValue,
-    required this.iterableValue,
-    super.key,
-    this.optionalBigInt,
-    this.optionalBool,
-    this.optionalDateTime,
-    this.optionalDouble,
-    this.optionalType,
-    this.optionalInt,
-    this.optionalNum,
-    this.optionalString,
-    this.optionalUri,
-    this.optionalIterable,
-    this.defaultBool = false,
-    this.defaultDouble = 0.0,
-    this.defType = TestEnum.value1,
-    this.defaultInt = 0,
-    this.defaultNum = 0,
-    this.defaultString = '',
-    this.defaultIterable = const [],
+    required this.title,
   });
 
-  final BigInt bigIntValue;
-  final bool boolValue;
-  final DateTime dateTimeValue;
-  final double doubleValue;
-  final TestEnum typeValue;
-  final int intValue;
-  final num numValue;
-  final String stringValue;
-  final Uri uriValue;
-  final List<String> iterableValue;
+  final String title;
 
-  final BigInt? optionalBigInt;
-  final bool? optionalBool;
-  final DateTime? optionalDateTime;
-  final double? optionalDouble;
-  final TestEnum? optionalType;
-  final int? optionalInt;
-  final num? optionalNum;
-  final String? optionalString;
-  final Uri? optionalUri;
-  final List<String>? optionalIterable;
-
-  final bool? defaultBool;
-  final double? defaultDouble;
-  final TestEnum? defType;
-  final int? defaultInt;
-  final num? defaultNum;
-  final String? defaultString;
-  final List<String>? defaultIterable;
+  @override
+  State<TestPage> createState() => _TestPageState();
 }
 
-enum TestEnum { value1, value2, value3 }
+class _TestPageState extends State<TestPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pushNamed('/second');
+          },
+          child: Text('Go to Second Page'),
+        ),
+      ),
+    );
+  }
+}

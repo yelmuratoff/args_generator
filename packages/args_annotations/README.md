@@ -1,5 +1,5 @@
 
-# Args Generator
+# Args Generator (Annotations)
 
 <p align="center">
   <a href="https://pub.dev/packages/args_generator"><img src="https://img.shields.io/pub/v/args_generator.svg" alt="Generator"></a>
@@ -13,6 +13,7 @@
   <a href="https://pub.dev/packages/args_generator/score"><img src="https://img.shields.io/pub/points/args_generator?logo=flutter" alt="Pub points"></a>
 </p>
 
+# Add-on package for Args Generator. Contains annotation for generating argument classes.
 
 **Args Generator** is a Dart library designed to simplify the management of arguments passed between pages in Flutter applications. By leveraging code generation, this package creates companion argument classes for pages, ensuring type safety and reducing boilerplate.
 

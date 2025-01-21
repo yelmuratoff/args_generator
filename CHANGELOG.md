@@ -1,3 +1,7 @@
+## 0.0.9
+
+- Added the `args_annotations' package to fix a bug with `source_gen` that does not work with `Flutter` projects.
+
 ## 0.0.8
 
 - Parsing fixed for `null` values.
