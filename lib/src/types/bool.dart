@@ -20,7 +20,7 @@ class TypeHelperBool extends TypeHelper {
 
   /// Decodes a `bool` value from the provided arguments.
   ///
-  /// - [field]: The [FieldElement] representing the field to decode.
+  /// - [field]: The [ParameterElement] representing the field to decode.
   /// - [defaultValue]: The default value for the field, if any.
   ///
   /// Checks if the key (derived from the field name converted to kebab-case)
@@ -32,7 +32,7 @@ class TypeHelperBool extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `bool` value.
   @override
-  String decode(FieldElement field, String? defaultValue) {
+  String decode(ParameterElement field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     return '''
@@ -44,7 +44,7 @@ args.containsKey('$key')
 
   /// Encodes a `bool` field into a map format.
   ///
-  /// - [field]: The [FieldElement] representing the field to encode.
+  /// - [field]: The [ParameterElement] representing the field to encode.
   ///
   /// If the field is nullable, the generated code includes a conditional check
   /// to ensure the field is not `null` before adding it to the map. The field's
@@ -53,7 +53,7 @@ args.containsKey('$key')
   /// Returns:
   /// A string representing the code to encode the `bool` value.
   @override
-  String encode(FieldElement field) {
+  String encode(ParameterElement field) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     final name = field.name;

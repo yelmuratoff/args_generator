@@ -126,6 +126,7 @@ class TestPageArgs {
         defaultIterable: args.containsKey('default-iterable')
             ? args['default-iterable']!.split(',').map((e) => e).toList()
             : null,
+        key: args['key'],
       );
     } catch (e) {
       return null;
@@ -170,7 +171,8 @@ class TestPageArgs {
         if (defaultString != null) 'default-string': defaultString!,
         if (defaultIterable != null)
           'default-iterable':
-              defaultIterable!.map((e) => e.toString()).join(",")
+              defaultIterable!.map((e) => e.toString()).join(","),
+        if (key != null) 'key': key!
       };
 
   static const _$TestEnumEnumMap = {

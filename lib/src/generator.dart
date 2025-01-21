@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
-import 'package:collection/collection.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:args_generator/args_generator.dart';
 import 'package:args_generator/src/types/type_helper.dart';
@@ -67,14 +66,12 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
 
     // Generate the body of the `tryParse` method.
     final tryParseBody = parameters.map((param) {
-      final field = fields.firstWhereOrNull((f) => f.name == param.name);
-      if (field == null) return '';
-      final decodedValue = _decodeField(field, param);
+      final decodedValue = _decodeField(param);
       return '${param.name}: $decodedValue,';
     }).join('\n        ');
 
     // Generate the body of the `toArguments` method.
-    final toArgumentsBody = fields.map((field) {
+    final toArgumentsBody = parameters.map((field) {
       return _encodeField(field);
     }).join(',\n        ');
 
@@ -132,19 +129,19 @@ class $argsClassName {
   ///
   /// Returns:
   /// A string representing the decoding logic for the field.
-  String _decodeField(FieldElement field, ParameterElement param) {
-    final fieldType = field.type;
+  String _decodeField(ParameterElement param) {
+    final fieldType = param.type;
     final defaultValue = param.defaultValueCode;
 
     for (final helper in TypeHelper.values) {
       if (helper.matchesType(fieldType)) {
-        return helper.decode(field, defaultValue);
+        return helper.decode(param, defaultValue);
       }
     }
 
     throw InvalidGenerationSourceError(
       'The field type `${fieldType.getDisplayString()}` is not supported.',
-      element: field,
+      element: param,
     );
   }
 
@@ -154,7 +151,7 @@ class $argsClassName {
   ///
   /// Returns:
   /// A string representing the encoding logic for the field.
-  String _encodeField(FieldElement field) {
+  String _encodeField(ParameterElement field) {
     final fieldType = field.type;
 
     for (final helper in TypeHelper.values) {

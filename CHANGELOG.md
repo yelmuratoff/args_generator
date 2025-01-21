@@ -1,3 +1,7 @@
+## 0.0.6
+
+- Fix dart:mirrors issue.
+
 ## 0.0.5
 
 - Added `super` fields to args.

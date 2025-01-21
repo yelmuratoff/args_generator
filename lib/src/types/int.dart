@@ -20,7 +20,7 @@ class TypeHelperInt extends TypeHelper {
 
   /// Decodes an `int` value from the provided arguments.
   ///
-  /// - [field]: The [FieldElement] representing the field to decode.
+  /// - [field]: The [ParameterElement] representing the field to decode.
   /// - [defaultValue]: The default value for the field, if any (not used here).
   ///
   /// This method extracts the value associated with the field's name (converted
@@ -31,7 +31,7 @@ class TypeHelperInt extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `int` value.
   @override
-  String decode(FieldElement field, String? defaultValue) {
+  String decode(ParameterElement field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     return '''
@@ -41,7 +41,7 @@ int.tryParse(args['$key'] ?? '0')${isNullable ? '' : ' ?? 0'}
 
   /// Encodes an `int` field into a map format.
   ///
-  /// - [field]: The [FieldElement] representing the field to encode.
+  /// - [field]: The [ParameterElement] representing the field to encode.
   ///
   /// If the field is nullable, the generated code includes a conditional check
   /// to ensure the field is not `null` before adding it to the map. The field's
@@ -51,7 +51,7 @@ int.tryParse(args['$key'] ?? '0')${isNullable ? '' : ' ?? 0'}
   /// Returns:
   /// A string representing the code to encode the `int` value.
   @override
-  String encode(FieldElement field) {
+  String encode(ParameterElement field) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     final name = field.name;

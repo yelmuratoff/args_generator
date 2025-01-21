@@ -3,7 +3,6 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:args_generator/src/types/type_helper.dart';
 import 'package:args_generator/src/utils/helpers.dart';
-import 'package:source_gen/source_gen.dart';
 
 /// A [TypeHelper] implementation for handling fields of type `Uri`.
 ///
@@ -17,12 +16,18 @@ class TypeHelperUri extends TypeHelper {
   /// Returns:
   /// `true` if the [type] is assignable to `Uri`; otherwise, `false`.
   @override
-  bool matchesType(DartType type) =>
-      const TypeChecker.fromRuntime(Uri).isAssignableFromType(type);
+  bool matchesType(DartType type) {
+    if (type is InterfaceType) {
+      final element = type.element;
+      print(element.name);
+      return element.name == 'Uri';
+    }
+    return false;
+  }
 
   /// Decodes a `Uri` value from the provided arguments.
   ///
-  /// - [field]: The [FieldElement] representing the field to decode.
+  /// - [field]: The [ParameterElement] representing the field to decode.
   /// - [defaultValue]: An optional default value for the field (not used here).
   ///
   /// The method checks for the field's name (converted to kebab-case) in the
@@ -33,7 +38,7 @@ class TypeHelperUri extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `Uri` value.
   @override
-  String decode(FieldElement field, String? defaultValue) {
+  String decode(ParameterElement field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
@@ -44,7 +49,7 @@ Uri.tryParse(args['$key'] ?? '')${isNullable ? '' : ' ?? Uri()'}
 
   /// Encodes a `Uri` field into a map format.
   ///
-  /// - [field]: The [FieldElement] representing the field to encode.
+  /// - [field]: The [ParameterElement] representing the field to encode.
   ///
   /// If the field is nullable, the generated code includes a conditional check
   /// to ensure the field is not `null` before adding it to the map. The field's
@@ -54,7 +59,7 @@ Uri.tryParse(args['$key'] ?? '')${isNullable ? '' : ' ?? Uri()'}
   /// Returns:
   /// A string representing the code to encode the `Uri` value.
   @override
-  String encode(FieldElement field) {
+  String encode(ParameterElement field) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     final name = field.name;

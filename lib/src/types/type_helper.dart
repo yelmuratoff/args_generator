@@ -41,7 +41,7 @@ abstract class TypeHelper {
   ///
   /// Returns:
   /// A string representing the code for decoding the field value.
-  String decode(FieldElement field, String? defaultValue);
+  String decode(ParameterElement field, String? defaultValue);
 
   /// Encodes a field of the handled type into a map format.
   ///
@@ -49,7 +49,7 @@ abstract class TypeHelper {
   ///
   /// Returns:
   /// A string representing the code for encoding the field value.
-  String encode(FieldElement field);
+  String encode(ParameterElement field);
 
   /// Provides a list of all available type helpers.
   ///

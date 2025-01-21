@@ -32,7 +32,7 @@ Add the following dependencies to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  args_generator: ^0.0.5
+  args_generator: ^0.0.6
 
 dev_dependencies:
   build_runner: ^2.4.14

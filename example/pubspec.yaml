@@ -6,9 +6,12 @@ publish_to: 'none'
 
 environment:
   sdk: ^3.6.0
+  flutter: ">=3.16.0"
 
 # Add regular dependencies here.
 dependencies:
+  flutter:
+    sdk: flutter
   args_generator:
     path: ../
 

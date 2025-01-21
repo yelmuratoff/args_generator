@@ -31,7 +31,7 @@ class TypeHelperEnum extends TypeHelper {
 
   /// Decodes an enum value from the provided arguments.
   ///
-  /// - [field]: The [FieldElement] representing the enum field to decode.
+  /// - [field]: The [ParameterElement] representing the enum field to decode.
   /// - [defaultValue]: The default value for the field, if any (not used here).
   ///
   /// This method checks if the field's name (converted to kebab-case) exists
@@ -44,7 +44,7 @@ class TypeHelperEnum extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the enum value.
   @override
-  String decode(FieldElement field, String? defaultValue) {
+  String decode(ParameterElement field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
     final enumName = field.type.getDisplayString();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
@@ -70,7 +70,7 @@ args.containsKey('$key')
 
   /// Encodes an enum field into a map format.
   ///
-  /// - [field]: The [FieldElement] representing the enum field to encode.
+  /// - [field]: The [ParameterElement] representing the enum field to encode.
   ///
   /// Uses a generated enum map to encode the enum value into its string
   /// representation. The field's name is converted to kebab-case for use
@@ -80,7 +80,7 @@ args.containsKey('$key')
   /// Returns:
   /// A string representing the code to encode the enum value.
   @override
-  String encode(FieldElement field) {
+  String encode(ParameterElement field) {
     final key = field.name.convertToKebabCase();
     final name = field.name;
     return '''
