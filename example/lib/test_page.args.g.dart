@@ -7,35 +7,35 @@ part of 'test_page.dart';
 // **************************************************************************
 
 class TestPageArgs {
-  const TestPageArgs(
-      {required this.bigIntValue,
-      required this.boolValue,
-      required this.dateTimeValue,
-      required this.doubleValue,
-      required this.typeValue,
-      required this.intValue,
-      required this.numValue,
-      required this.stringValue,
-      required this.uriValue,
-      required this.iterableValue,
-      this.optionalBigInt,
-      this.optionalBool,
-      this.optionalDateTime,
-      this.optionalDouble,
-      this.optionalType,
-      this.optionalInt,
-      this.optionalNum,
-      this.optionalString,
-      this.optionalUri,
-      this.optionalIterable,
-      this.defaultBool = false,
-      this.defaultDouble = 0.0,
-      this.defType = TestEnum.value1,
-      this.defaultInt = 0,
-      this.defaultNum = 0,
-      this.defaultString = '',
-      this.defaultIterable = const [],
-      this.key});
+  const TestPageArgs({
+    required this.bigIntValue,
+    required this.boolValue,
+    required this.dateTimeValue,
+    required this.doubleValue,
+    required this.typeValue,
+    required this.intValue,
+    required this.numValue,
+    required this.stringValue,
+    required this.uriValue,
+    required this.iterableValue,
+    this.optionalBigInt,
+    this.optionalBool,
+    this.optionalDateTime,
+    this.optionalDouble,
+    this.optionalType,
+    this.optionalInt,
+    this.optionalNum,
+    this.optionalString,
+    this.optionalUri,
+    this.optionalIterable,
+    this.defaultBool = false,
+    this.defaultDouble = 0.0,
+    this.defType = TestEnum.value1,
+    this.defaultInt = 0,
+    this.defaultNum = 0,
+    this.defaultString = '',
+    this.defaultIterable = const [],
+  });
 
   final BigInt bigIntValue;
   final bool boolValue;
@@ -64,7 +64,6 @@ class TestPageArgs {
   final num? defaultNum;
   final String? defaultString;
   final List<String>? defaultIterable;
-  final String? key;
 
   /// Tries to parse the arguments from a [Map] and returns an instance of [TestPageArgs].
   /// Returns `null` if parsing fails.
@@ -126,7 +125,6 @@ class TestPageArgs {
         defaultIterable: args.containsKey('default-iterable')
             ? args['default-iterable']!.split(',').map((e) => e).toList()
             : null,
-        key: args['key'],
       );
     } catch (e) {
       return null;
@@ -172,7 +170,6 @@ class TestPageArgs {
         if (defaultIterable != null)
           'default-iterable':
               defaultIterable!.map((e) => e.toString()).join(","),
-        if (key != null) 'key': key!
       };
 
   static const _$TestEnumEnumMap = {

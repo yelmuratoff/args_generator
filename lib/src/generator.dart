@@ -56,17 +56,30 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
     final constructorParams = parameters.map((param) {
       final isRequired = param.isRequired;
       final defaultValue = param.defaultValueCode;
-      return '${isRequired ? 'required ' : ''}this.${param.name}${defaultValue != null ? ' = $defaultValue' : ''}';
+      for (final helper in TypeHelper.values) {
+        if (helper.matchesType(param.type)) {
+          return '${isRequired ? 'required ' : ''}this.${param.name}${defaultValue != null ? ' = $defaultValue' : ''}';
+        }
+      }
+      return '';
     }).join(', ');
 
     // Generate field declarations for the arguments class.
     final fieldDeclarations = parameters.map((field) {
-      return 'final ${field.type.getDisplayString()} ${field.name};';
+      for (final helper in TypeHelper.values) {
+        if (helper.matchesType(field.type)) {
+          return 'final ${field.type.getDisplayString()} ${field.name};';
+        }
+      }
+      return '';
     }).join('\n  ');
 
     // Generate the body of the `tryParse` method.
     final tryParseBody = parameters.map((param) {
       final decodedValue = _decodeField(param);
+      if (decodedValue == null) {
+        return '';
+      }
       return '${param.name}: $decodedValue,';
     }).join('\n        ');
 
@@ -129,7 +142,7 @@ class $argsClassName {
   ///
   /// Returns:
   /// A string representing the decoding logic for the field.
-  String _decodeField(ParameterElement param) {
+  String? _decodeField(ParameterElement param) {
     final fieldType = param.type;
     final defaultValue = param.defaultValueCode;
 
@@ -139,10 +152,7 @@ class $argsClassName {
       }
     }
 
-    throw InvalidGenerationSourceError(
-      'The field type `${fieldType.getDisplayString()}` is not supported.',
-      element: param,
-    );
+    return null;
   }
 
   /// Encodes a field into the arguments map.
@@ -160,9 +170,6 @@ class $argsClassName {
       }
     }
 
-    throw InvalidGenerationSourceError(
-      'The field type `${field.type.getDisplayString()}` is not supported for encoding.',
-      element: field,
-    );
+    return '';
   }
 }

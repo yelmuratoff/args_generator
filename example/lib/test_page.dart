@@ -1,10 +1,11 @@
 import 'package:args_generator/args_generator.dart';
+import 'package:flutter/material.dart';
 
 part 'test_page.args.g.dart';
 
 class BasePage {
   const BasePage({this.key});
-  final String? key;
+  final Key? key;
 }
 
 @GenerateArgs()

@@ -1,3 +1,7 @@
+## 0.0.7
+
+- Skip the complex types.
+
 ## 0.0.6
 
 - Fix dart:mirrors issue.
