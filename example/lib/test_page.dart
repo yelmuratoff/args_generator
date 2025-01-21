@@ -21,6 +21,7 @@ class TestPage extends BasePage {
     required this.stringValue,
     required this.uriValue,
     required this.iterableValue,
+    super.key,
     this.optionalBigInt,
     this.optionalBool,
     this.optionalDateTime,
@@ -38,7 +39,6 @@ class TestPage extends BasePage {
     this.defaultNum = 0,
     this.defaultString = '',
     this.defaultIterable = const [],
-    super.key,
   });
 
   final BigInt bigIntValue;

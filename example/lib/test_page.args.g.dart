@@ -169,7 +169,7 @@ class TestPageArgs {
         if (defaultString != null) 'default-string': defaultString!,
         if (defaultIterable != null)
           'default-iterable':
-              defaultIterable!.map((e) => e.toString()).join(","),
+              defaultIterable!.map((e) => e.toString()).join(",")
       };
 
   static const _$TestEnumEnumMap = {

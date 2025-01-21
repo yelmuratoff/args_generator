@@ -47,46 +47,59 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
     }
 
     // Collect final instance fields and constructor parameters.
-    final fields = classElement.fields
-        .where((field) => !field.isStatic && field.isFinal)
-        .toList();
+    final fields = classElement.fields.where((field) => !field.isStatic && field.isFinal).toList();
     final parameters = constructor.parameters;
 
     // Generate constructor parameters for the arguments class.
-    final constructorParams = parameters.map((param) {
+    // final constructorParams = parameters.map((param) {
+    //   final isRequired = param.isRequired;
+    //   final defaultValue = param.defaultValueCode;
+    //   for (final helper in TypeHelper.values) {
+    //     if (helper.matchesType(param.type)) {
+    //       return '${isRequired ? 'required ' : ''}this.${param.name}${defaultValue != null ? ' = $defaultValue' : ''}';
+    //     }
+    //   }
+    // }).join(', ');
+
+    final constructorParams = [];
+    for (final param in parameters) {
       final isRequired = param.isRequired;
       final defaultValue = param.defaultValueCode;
       for (final helper in TypeHelper.values) {
         if (helper.matchesType(param.type)) {
-          return '${isRequired ? 'required ' : ''}this.${param.name}${defaultValue != null ? ' = $defaultValue' : ''}';
+          constructorParams.add(
+              '${isRequired ? 'required ' : ''}this.${param.name}${defaultValue != null ? ' = $defaultValue' : ''}');
         }
       }
-      return '';
-    }).join(', ');
+    }
 
     // Generate field declarations for the arguments class.
-    final fieldDeclarations = parameters.map((field) {
+    final fieldDeclarations = [];
+    for (final param in parameters) {
       for (final helper in TypeHelper.values) {
-        if (helper.matchesType(field.type)) {
-          return 'final ${field.type.getDisplayString()} ${field.name};';
+        if (helper.matchesType(param.type)) {
+          fieldDeclarations.add('final ${param.type.getDisplayString()} ${param.name};');
         }
       }
-      return '';
-    }).join('\n  ');
+    }
 
     // Generate the body of the `tryParse` method.
-    final tryParseBody = parameters.map((param) {
+    final tryParseBody = [];
+    for (final param in parameters) {
       final decodedValue = _decodeField(param);
-      if (decodedValue == null) {
-        return '';
+      if (decodedValue != null) {
+        tryParseBody.add('${param.name}: $decodedValue,');
       }
-      return '${param.name}: $decodedValue,';
-    }).join('\n        ');
+    }
 
     // Generate the body of the `toArguments` method.
-    final toArgumentsBody = parameters.map((field) {
-      return _encodeField(field);
-    }).join(',\n        ');
+    final toArgumentsBody = [];
+    for (final param in parameters) {
+      final encodedValue = _encodeField(param);
+      if (encodedValue != null) {
+        toArgumentsBody.add(encodedValue);
+      }
+    }
 
     // Generate enum maps for any enum fields.
     final uniqueEnumFields = fields
@@ -108,17 +121,17 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
     return '''
 class $argsClassName {
   const $argsClassName({
-    $constructorParams
+    ${constructorParams.join(',\n    ')},
   });
 
-  $fieldDeclarations
+  ${fieldDeclarations.join('\n  ')}
 
   /// Tries to parse the arguments from a [Map] and returns an instance of [$argsClassName].
   /// Returns `null` if parsing fails.
   static $argsClassName? tryParse(Map<String, String> args) {
     try {
       return $argsClassName(
-        $tryParseBody
+        ${tryParseBody.join('\n        ')}
       );
     } catch (e) {
       return null;
@@ -127,7 +140,7 @@ class $argsClassName {
 
   /// Converts the fields of this class into a [Map] of arguments.
   Map<String, String> toArguments() => {
-        $toArgumentsBody
+        ${toArgumentsBody.join(',\n        ')}
       };
 
   $enumMapDeclarations
@@ -151,7 +164,6 @@ class $argsClassName {
         return helper.decode(param, defaultValue);
       }
     }
-
     return null;
   }
 
@@ -161,7 +173,7 @@ class $argsClassName {
   ///
   /// Returns:
   /// A string representing the encoding logic for the field.
-  String _encodeField(ParameterElement field) {
+  String? _encodeField(ParameterElement field) {
     final fieldType = field.type;
 
     for (final helper in TypeHelper.values) {
@@ -169,7 +181,6 @@ class $argsClassName {
         return helper.encode(field);
       }
     }
-
-    return '';
+    return null;
   }
 }

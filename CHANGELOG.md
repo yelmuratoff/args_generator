@@ -1,3 +1,7 @@
+## 0.0.8
+
+- Parsing fixed for `null` values.
+
 ## 0.0.7
 
 - Skip the complex types.
