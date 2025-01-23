@@ -41,9 +41,13 @@ class TypeHelperBigInt extends TypeHelper {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
-    return '''
-BigInt.tryParse(args['$key'] ?? '0')${isNullable ? '' : ' ?? BigInt.zero'}
-''';
+    if (isNullable) {
+      if (defaultValue != null) {
+        return "BigInt.tryParse(args['$key'] ?? $defaultValue)";
+      }
+      return "args['$key'] != null ? BigInt.tryParse(args['$key']!) : null";
+    }
+    return "BigInt.parse(args['$key'].toString(),)";
   }
 
   /// Encodes a `BigInt` field into a map format.

@@ -34,11 +34,11 @@ Add the following dependencies to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  args_generator: ^1.0.0
+  args_generator: ^1.0.2
 
 dev_dependencies:
   build_runner: ^2.4.14
-  args_annotations: ^1.0.0
+  args_annotations: ^1.0.2
 ```
 
 Run the command to fetch the dependencies:

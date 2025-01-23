@@ -1,6 +1,6 @@
 name: page_args_generator_example
 description: A sample command-line application.
-version: 1.0.0
+version: 1.0.2
 homepage: https://github.com/yelmuratoff/args_generator
 repository: https://github.com/yelmuratoff/args_generator
 
@@ -19,3 +19,9 @@ dev_dependencies:
   test: ^1.24.0
   build_runner: ^2.4.14
   args_generator: ^0.0.9
+
+dependency_overrides:
+  args_generator_annotations:
+    path: ../packages/args_annotations
+  args_generator:
+    path: ../

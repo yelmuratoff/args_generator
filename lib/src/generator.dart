@@ -159,6 +159,23 @@ class $argsClassName {
     }
   }
 
+   /// A builder method for creating the associated widget from arguments.
+  static Widget builder(
+    BuildContext context, {
+    required Map<String, String> arguments,
+    Widget? notFoundScreen,
+  }) {
+    final args = $argsClassName.tryParse(arguments);
+
+    if (args == null) {
+      return notFoundScreen ?? const SizedBox.shrink();
+    }
+
+    return $className(
+      ${fields.map((f) => '${f.name}: args.${f.name},').join('\n      ')}
+    );
+  }
+
   /// Converts the fields of this class into a [Map] of arguments.
   Map<String, String> toArguments() => {
         ${toArgumentsBody.join(',\n        ')}

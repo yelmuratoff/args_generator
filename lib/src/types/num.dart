@@ -34,9 +34,14 @@ class TypeHelperNum extends TypeHelper {
   String decode(ParameterElement field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
-    return '''
-num.tryParse(args['$key'] ?? '0')${isNullable ? '' : ' ?? 0'}
-''';
+
+    if (isNullable) {
+      if (defaultValue != null) {
+        return "num.tryParse(args['$key'] ?? '$defaultValue')";
+      }
+      return "args['$key'] != null ? num.tryParse(args['$key']!) : null";
+    }
+    return "num.parse(args['$key'].toString(),)";
   }
 
   /// Encodes a `num` field into a map format.

@@ -34,9 +34,14 @@ class TypeHelperDouble extends TypeHelper {
   String decode(ParameterElement field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
-    return '''
-double.tryParse(args['$key'] ?? '0')${isNullable ? '' : ' ?? 0.0'}
-''';
+
+    if (isNullable) {
+      if (defaultValue != null) {
+        return "double.tryParse(args['$key'] ?? '$defaultValue')";
+      }
+      return "args['$key'] != null ? double.tryParse(args['$key']!) : null";
+    }
+    return "double.parse(args['$key'].toString(),)";
   }
 
   /// Encodes a `double` field into a map format.

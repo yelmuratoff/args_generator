@@ -42,9 +42,13 @@ class TypeHelperUri extends TypeHelper {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
-    return '''
-Uri.tryParse(args['$key'] ?? '')${isNullable ? '' : ' ?? Uri()'}
-''';
+    if (isNullable) {
+      if (defaultValue != null) {
+        return "Uri.tryParse(args['$key'] ?? $defaultValue)";
+      }
+      return "args['$key'] != null ? Uri.tryParse(args['$key']!) : null";
+    }
+    return "Uri.parse(args['$key'].toString(),)";
   }
 
   /// Encodes a `Uri` field into a map format.

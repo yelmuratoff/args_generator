@@ -1,3 +1,7 @@
+## 1.0.2
+
+- Added new static method `builder` to the generated class for creating the associated widget from arguments.
+
 ## 0.0.9
 
 - Added the `args_annotations' package to fix a bug with `source_gen` that does not work with `Flutter` projects.
