@@ -1,3 +1,7 @@
+## 1.0.3
+
+- If the page has a `wrappedRoute` method, then it will be used in the `builder`.
+
 ## 1.0.2
 
 - Added new static method `builder` to the generated class for creating the associated widget from arguments.

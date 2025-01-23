@@ -53,6 +53,11 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
 
     final classElement = element;
     final className = classElement.name;
+    final hasRouteWrapper = classElement.methods.any(
+      (interface) {
+        return interface.name == 'wrappedRoute';
+      },
+    );
     final argsClassName = '${className}Args';
 
     // Validate the existence of an unnamed constructor.
@@ -138,6 +143,8 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
       return 'static const _\$${enumType}EnumMap = {\n$enumValues\n};';
     }).join('\n\n');
 
+    final wrapper = hasRouteWrapper ? '.wrappedRoute(context)' : '';
+
     // Generate the arguments class.
     return '''
 class $argsClassName {
@@ -173,7 +180,7 @@ class $argsClassName {
 
     return $className(
       ${fields.map((f) => '${f.name}: args.${f.name},').join('\n      ')}
-    );
+    )$wrapper;
   }
 
   /// Converts the fields of this class into a [Map] of arguments.

@@ -193,7 +193,7 @@ class TestPageArgs {
       defaultNum: args.defaultNum,
       defaultString: args.defaultString,
       defaultIterable: args.defaultIterable,
-    );
+    ).wrappedRoute(context);
   }
 
   /// Converts the fields of this class into a [Map] of arguments.
