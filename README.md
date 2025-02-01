@@ -33,17 +33,18 @@ Add the following dependencies to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  args_generator: ^1.0.3
+  args_generator: ^1.0.4
 
 dev_dependencies:
   build_runner: ^2.4.14
-  args_annotations: ^1.0.3
+  args_annotations: ^1.0.4
 ```
 
 Run the command to fetch the dependencies:
 
 ```bash
 dart pub get
+dart run build_runner build --delete-conflicting-outputs
 ```
 
 ### Usage

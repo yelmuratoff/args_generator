@@ -33,15 +33,14 @@ class TypeHelperInt extends TypeHelper {
   @override
   String decode(ParameterElement field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
+    final arg = "args['$key']";
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
-    if (isNullable) {
-      if (defaultValue != null) {
-        return "int.tryParse(args['$key'] ?? '$defaultValue')";
-      }
-      return "args['$key'] != null ? int.tryParse(args['$key']!) : null";
-    }
-    return "int.parse(args['$key'].toString(),)";
+    return isNullable
+        ? (defaultValue != null
+            ? "int.tryParse($arg ?? '$defaultValue')"
+            : "$arg != null ? int.tryParse($arg!) : null")
+        : "int.parse($arg.toString())";
   }
 
   /// Encodes an `int` field into a map format.

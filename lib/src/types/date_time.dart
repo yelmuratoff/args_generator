@@ -41,15 +41,15 @@ class TypeHelperDateTime extends TypeHelper {
   @override
   String decode(ParameterElement field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
+    final arg = "args['$key']";
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
     if (isNullable) {
-      if (defaultValue != null) {
-        return "DateTime.tryParse(args['$key'] ?? $defaultValue)";
-      }
-      return "args['$key'] != null ? DateTime.tryParse(args['$key']!) : null";
+      return defaultValue != null
+          ? "DateTime.tryParse($arg ?? $defaultValue)"
+          : "$arg != null ? DateTime.tryParse($arg!) : null";
     }
-    return "DateTime.parse(args['$key'].toString(),)";
+    return "DateTime.parse($arg.toString())";
   }
 
   /// Encodes a `DateTime` field into a map format.

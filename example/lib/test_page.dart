@@ -50,7 +50,7 @@ class TestPage extends StatefulWidget implements RouteWrapper {
     this.optionalIterable,
     this.defaultBool = false,
     this.defaultDouble = 0.0,
-    this.defType = TestEnum.value1,
+    this.defType = TestEnum.value3,
     this.defaultInt = 0,
     this.defaultNum = 0,
     this.defaultString = '',

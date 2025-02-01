@@ -36,12 +36,11 @@ class TypeHelperString extends TypeHelper {
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
     if (isNullable) {
-      if (defaultValue != null) {
-        return "args['$key'] ?? $defaultValue";
-      }
-      return "args['$key']";
+      return defaultValue != null
+          ? "args['$key'] ?? $defaultValue"
+          : "args['$key']";
     }
-    return "args['$key'] ?? ${isNullable ? defaultValue : "''"}";
+    return "args['$key'] ?? ''";
   }
 
   /// Encodes a `String` field into a map format.

@@ -40,15 +40,15 @@ class TypeHelperUri extends TypeHelper {
   @override
   String decode(ParameterElement field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
+    final arg = "args['$key']";
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
     if (isNullable) {
-      if (defaultValue != null) {
-        return "Uri.tryParse(args['$key'] ?? $defaultValue)";
-      }
-      return "args['$key'] != null ? Uri.tryParse(args['$key']!) : null";
+      return defaultValue != null
+          ? "Uri.tryParse($arg ?? $defaultValue)"
+          : "$arg != null ? Uri.tryParse($arg!) : null";
     }
-    return "Uri.parse(args['$key'].toString(),)";
+    return "Uri.parse($arg.toString())";
   }
 
   /// Encodes a `Uri` field into a map format.

@@ -30,7 +30,7 @@ class TestPageArgs {
     this.optionalIterable,
     this.defaultBool = false,
     this.defaultDouble = 0.0,
-    this.defType = TestEnum.value1,
+    this.defType = TestEnum.value3,
     this.defaultInt = 0,
     this.defaultNum = 0,
     this.defaultString = '',
@@ -70,34 +70,22 @@ class TestPageArgs {
   static TestPageArgs? tryParse(Map<String, String> args) {
     try {
       return TestPageArgs(
-        bigIntValue: BigInt.parse(
-          args['big-int-value'].toString(),
-        ),
+        bigIntValue: BigInt.parse(args['big-int-value'].toString()),
         boolValue: args.containsKey('bool-value')
             ? (args['bool-value']?.toLowerCase() == 'true')
             : false,
-        dateTimeValue: DateTime.parse(
-          args['date-time-value'].toString(),
-        ),
-        doubleValue: double.parse(
-          args['double-value'].toString(),
-        ),
+        dateTimeValue: DateTime.parse(args['date-time-value'].toString()),
+        doubleValue: double.parse(args['double-value'].toString()),
         typeValue: args.containsKey('type-value')
             ? TestEnum.values
                 .where(
                     (e) => e.toString().split('.').last == args['type-value'])
                 .first
             : TestEnum.values.first,
-        intValue: int.parse(
-          args['int-value'].toString(),
-        ),
-        numValue: num.parse(
-          args['num-value'].toString(),
-        ),
+        intValue: int.parse(args['int-value'].toString()),
+        numValue: num.parse(args['num-value'].toString()),
         stringValue: args['string-value'] ?? '',
-        uriValue: Uri.parse(
-          args['uri-value'].toString(),
-        ),
+        uriValue: Uri.parse(args['uri-value'].toString()),
         iterableValue: args.containsKey('iterable-value')
             ? args['iterable-value']!.split(',').map((e) => e).toList()
             : [],
@@ -138,9 +126,11 @@ class TestPageArgs {
         defaultDouble: double.tryParse(args['default-double'] ?? '0.0'),
         defType: args.containsKey('def-type')
             ? TestEnum.values
-                .where((e) => e.toString().split('.').last == args['def-type'])
-                .firstOrNull
-            : null,
+                    .where(
+                        (e) => e.toString().split('.').last == args['def-type'])
+                    .firstOrNull ??
+                TestEnum.value3
+            : TestEnum.value3,
         defaultInt: int.tryParse(args['default-int'] ?? '0'),
         defaultNum: num.tryParse(args['default-num'] ?? '0'),
         defaultString: args['default-string'] ?? '',
