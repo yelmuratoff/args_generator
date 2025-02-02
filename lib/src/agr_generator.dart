@@ -37,13 +37,14 @@ class AggregatingArgsBuilder implements Builder {
       bool foundAnnotated = false;
       final generationFutures = <Future>[];
 
-      for (final element in library.topLevelElements.whereType<ClassElement>()) {
+      for (final element
+          in library.topLevelElements.whereType<ClassElement>()) {
         for (final meta in element.metadata) {
           final constant = meta.computeConstantValue();
           if (constant != null && typeChecker.isExactlyType(constant.type!)) {
             foundAnnotated = true;
-            generationFutures
-                .add(_generateForElement(generator, element, ConstantReader(constant), buildStep, generatedParts));
+            generationFutures.add(_generateForElement(generator, element,
+                ConstantReader(constant), buildStep, generatedParts));
             break;
           }
         }
@@ -75,7 +76,8 @@ $importsText
 ${generatedParts.join('\n\n')}
 ''';
 
-    final outputId = AssetId(buildStep.inputId.package, 'lib/generated/args/router.args.g.dart');
+    final outputId = AssetId(
+        buildStep.inputId.package, 'lib/generated/args/router.args.g.dart');
     await buildStep.writeAsString(outputId, output);
   }
 
@@ -101,4 +103,5 @@ ${generatedParts.join('\n\n')}
   }
 }
 
-Builder aggregatingArgsBuilder(BuilderOptions options) => AggregatingArgsBuilder();
+Builder aggregatingArgsBuilder(BuilderOptions options) =>
+    AggregatingArgsBuilder();

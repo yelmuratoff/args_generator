@@ -1,3 +1,7 @@
+## 1.0.5
+
+- Added new aggregated builder.
+
 ## 1.0.4
 
 - If the page has a `wrappedRoute` method, then it will be used in the `builder`.
