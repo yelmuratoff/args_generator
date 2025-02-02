@@ -33,7 +33,9 @@ class AggregatingArgsBuilder implements Builder {
     // Process all Dart files, skipping generated files (*.g.dart)
     await for (final input in buildStep.findAssets(Glob('lib/**.dart'))) {
       if (input.path.endsWith('.g.dart')) continue;
-      if (!await _fileContainsAnnotation(buildStep, input, 'GenerateArgs')) continue;
+      if (!await _fileContainsAnnotation(buildStep, input, 'GenerateArgs')) {
+        continue;
+      }
 
       final library = await _getOrLoadLibrary(buildStep, input);
       if (library == null) continue;

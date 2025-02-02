@@ -1,6 +1,6 @@
 name: args_generator
 description: Page Args Generator - A code generator for Flutter page arguments
-version: 1.0.5
+version: 1.0.6
 homepage: https://github.com/yelmuratoff/args_generator
 repository: https://github.com/yelmuratoff/args_generator
 
@@ -15,7 +15,7 @@ dependencies:
   analyzer: ^6.5.0
   collection: ^1.19.0
   source_gen: ^1.5.0
-  args_generator_annotations: ^1.0.5
+  args_generator_annotations: ^1.0.6
   glob: ^2.1.3
 
 dev_dependencies:
