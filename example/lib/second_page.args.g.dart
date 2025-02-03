@@ -64,55 +64,54 @@ class SecondPageArgs {
   static SecondPageArgs? tryParse(Map<String, String> args) {
     try {
       return SecondPageArgs(
-        bigIntValue: BigInt.parse(args['big-int-value'].toString()),
-        boolValue: args.containsKey('bool-value')
-            ? (args['bool-value']?.toLowerCase() == 'true')
-            : false,
-        dateTimeValue: DateTime.parse(args['date-time-value'].toString()),
-        doubleValue: double.parse(args['double-value'].toString()),
-        intValue: int.parse(args['int-value'].toString()),
-        numValue: num.parse(args['num-value'].toString()),
-        stringValue: args['string-value'] ?? '',
-        uriValue: Uri.parse(args['uri-value'].toString()),
-        iterableValue: args.containsKey('iterable-value')
-            ? args['iterable-value']!.split(',').map((e) => e).toList()
-            : [],
-        optionalBigInt: args['optional-big-int'] != null
-            ? BigInt.tryParse(args['optional-big-int']!)
-            : null,
-        optionalBool: args.containsKey('optional-bool')
-            ? (args['optional-bool']?.toLowerCase() == 'true')
-            : null,
-        optionalDateTime: args['optional-date-time'] != null
-            ? DateTime.tryParse(args['optional-date-time']!)
-            : null,
-        optionalDouble: args['optional-double'] != null
-            ? double.tryParse(args['optional-double']!)
-            : null,
-        optionalInt: args['optional-int'] != null
-            ? int.tryParse(args['optional-int']!)
-            : null,
-        optionalNum: args['optional-num'] != null
-            ? num.tryParse(args['optional-num']!)
-            : null,
-        optionalString: args['optional-string'],
-        optionalUri: args['optional-uri'] != null
-            ? Uri.tryParse(args['optional-uri']!)
-            : null,
-        optionalIterable: args.containsKey('optional-iterable')
-            ? args['optional-iterable']!.split(',').map((e) => e).toList()
-            : null,
-        defaultBool: args.containsKey('default-bool')
-            ? (args['default-bool']?.toLowerCase() == 'true')
-            : null,
-        defaultDouble: double.tryParse(args['default-double'] ?? '0.0'),
-        defaultInt: int.tryParse(args['default-int'] ?? '0'),
-        defaultNum: num.tryParse(args['default-num'] ?? '0'),
-        defaultString: args['default-string'] ?? '',
-        defaultIterable: args.containsKey('default-iterable')
-            ? args['default-iterable']!.split(',').map((e) => e).toList()
-            : null,
-      );
+          bigIntValue: BigInt.parse(args['big-int-value'].toString()),
+          boolValue: args.containsKey('bool-value')
+              ? (args['bool-value']?.toLowerCase() == 'true')
+              : false,
+          dateTimeValue: DateTime.parse(args['date-time-value'].toString()),
+          doubleValue: double.parse(args['double-value'].toString()),
+          intValue: int.parse(args['int-value'].toString()),
+          numValue: num.parse(args['num-value'].toString()),
+          stringValue: args['string-value'] ?? '',
+          uriValue: Uri.parse(args['uri-value'].toString()),
+          iterableValue: args.containsKey('iterable-value')
+              ? args['iterable-value']!.split(',').map((e) => e).toList()
+              : [],
+          optionalBigInt: args['optional-big-int'] != null
+              ? BigInt.tryParse(args['optional-big-int']!)
+              : null,
+          optionalBool: args.containsKey('optional-bool')
+              ? (args['optional-bool']?.toLowerCase() == 'true')
+              : null,
+          optionalDateTime: args['optional-date-time'] != null
+              ? DateTime.tryParse(args['optional-date-time']!)
+              : null,
+          optionalDouble: args['optional-double'] != null
+              ? double.tryParse(args['optional-double']!)
+              : null,
+          optionalInt: args['optional-int'] != null
+              ? int.tryParse(args['optional-int']!)
+              : null,
+          optionalNum: args['optional-num'] != null
+              ? num.tryParse(args['optional-num']!)
+              : null,
+          optionalString: args['optional-string'],
+          optionalUri: args['optional-uri'] != null
+              ? Uri.tryParse(args['optional-uri']!)
+              : null,
+          optionalIterable: args.containsKey('optional-iterable')
+              ? args['optional-iterable']!.split(',').map((e) => e).toList()
+              : null,
+          defaultBool: args.containsKey('default-bool')
+              ? (args['default-bool']?.toLowerCase() == 'true')
+              : null,
+          defaultDouble: double.tryParse(args['default-double'] ?? '0.0'),
+          defaultInt: int.tryParse(args['default-int'] ?? '0'),
+          defaultNum: num.tryParse(args['default-num'] ?? '0'),
+          defaultString: args['default-string'] ?? '',
+          defaultIterable: args.containsKey('default-iterable')
+              ? args['default-iterable']!.split(',').map((e) => e).toList()
+              : null);
     } catch (e) {
       return null;
     }

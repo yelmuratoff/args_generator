@@ -1,6 +1,7 @@
-## 1.0.6
+## 1.0.7
 
 - Added new aggregated builder.
+Please see example project for more details.
 
 ## 1.0.4
 

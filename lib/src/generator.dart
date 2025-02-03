@@ -75,17 +75,6 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
         .toList();
     final parameters = constructor.parameters;
 
-    // Generate constructor parameters for the arguments class.
-    // final constructorParams = parameters.map((param) {
-    //   final isRequired = param.isRequired;
-    //   final defaultValue = param.defaultValueCode;
-    //   for (final helper in TypeHelper.values) {
-    //     if (helper.matchesType(param.type)) {
-    //       return '${isRequired ? 'required ' : ''}this.${param.name}${defaultValue != null ? ' = $defaultValue' : ''}';
-    //     }
-    //   }
-    // }).join(', ');
-
     final constructorParams = [];
     for (final param in parameters) {
       final isRequired = param.isRequired;
@@ -114,7 +103,7 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
     for (final param in parameters) {
       final decodedValue = _decodeField(param);
       if (decodedValue != null) {
-        tryParseBody.add('${param.name}: $decodedValue,');
+        tryParseBody.add('${param.name}: $decodedValue');
       }
     }
 
@@ -159,7 +148,7 @@ class $argsClassName {
   static $argsClassName? tryParse(Map<String, String> args) {
     try {
       return $argsClassName(
-        ${tryParseBody.join('\n        ')}
+        ${tryParseBody.join(',\n        ')}
       );
     } catch (e) {
       return null;

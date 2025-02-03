@@ -1,4 +1,4 @@
-## 1.0.6
+## 1.0.7
 
 - If the page has a `wrappedRoute` method, then it will be used in the `builder`.
 

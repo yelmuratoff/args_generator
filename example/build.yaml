@@ -5,10 +5,10 @@ builders:
   args_generator:
     import: "package:args_generator/args_generator.dart"
     builder_factories: ["argsGenerator"]
-    build_extensions:
-      r'$package$': ["lib/generated/args/router.args.g.dart"]
+    build_extensions: {}
     auto_apply: root_package
     build_to: source
     defaults:
       options:
         mode: "aggregated"
+        output: "lib/args/router.args.g.dart"

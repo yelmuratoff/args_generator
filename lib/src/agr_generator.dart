@@ -12,10 +12,16 @@ import 'package:args_generator_annotations/args_annotations.dart';
 /// A `Builder` that aggregates all classes annotated with `@GenerateArgs`
 /// and generates argument-handling code for them.
 class AggregatingArgsBuilder implements Builder {
+  AggregatingArgsBuilder({
+    required this.outputPath,
+  });
+
+  final String outputPath;
+
   @override
-  final buildExtensions = const {
-    r'$package$': ['lib/generated/args/router.args.g.dart']
-  };
+  Map<String, List<String>> get buildExtensions => {
+        r'$package$': [outputPath],
+      };
 
   final Map<String, String> _uriToPrefix = {};
   final Map<String, String> _classToPrefix = {};
@@ -41,10 +47,12 @@ class AggregatingArgsBuilder implements Builder {
       if (library == null) continue;
 
       bool foundAnnotated = false;
-      for (final classEl in library.topLevelElements.whereType<ClassElement>()) {
+      for (final classEl
+          in library.topLevelElements.whereType<ClassElement>()) {
         for (final meta in classEl.metadata) {
           final constValue = meta.computeConstantValue();
-          if (constValue != null && typeChecker.isExactlyType(constValue.type!)) {
+          if (constValue != null &&
+              typeChecker.isExactlyType(constValue.type!)) {
             foundAnnotated = true;
             try {
               final code = await generator.generateForAnnotatedElement(
@@ -88,7 +96,8 @@ class AggregatingArgsBuilder implements Builder {
     // Replace class names with their respective prefixes
     var body = generatedParts.join('\n\n');
     _classToPrefix.forEach((name, prefix) {
-      body = body.replaceAllMapped(RegExp('\\b$name\\b'), (_) => '$prefix.$name');
+      body =
+          body.replaceAllMapped(RegExp('\\b$name\\b'), (_) => '$prefix.$name');
     });
 
     // Filter only necessary imports
@@ -100,7 +109,8 @@ class AggregatingArgsBuilder implements Builder {
       if (match == null) return false;
       final importUri = match.group(1)!;
       final importPrefix = match.group(2)!;
-      return _annotatedUris.contains(importUri) || body.contains('$importPrefix.');
+      return _annotatedUris.contains(importUri) ||
+          body.contains('$importPrefix.');
     }).toList();
 
     // Generate final output file
@@ -114,19 +124,21 @@ $body
 ''';
 
     await buildStep.writeAsString(
-      AssetId(buildStep.inputId.package, 'lib/generated/args/router.args.g.dart'),
+      AssetId(buildStep.inputId.package, outputPath),
       output,
     );
   }
 
   /// Checks if a file likely contains the specified annotation to avoid unnecessary parsing.
-  Future<bool> _fileContainsAnnotation(BuildStep buildStep, AssetId id, String annotationName) async {
+  Future<bool> _fileContainsAnnotation(
+      BuildStep buildStep, AssetId id, String annotationName) async {
     final content = await buildStep.readAsString(id);
     return content.contains(annotationName);
   }
 
   /// Collects all top-level classes and enums from the library and its exports.
-  Future<void> _collectTopLevelClasses(LibraryElement library, String prefix, [Set<LibraryElement>? visited]) async {
+  Future<void> _collectTopLevelClasses(LibraryElement library, String prefix,
+      [Set<LibraryElement>? visited]) async {
     visited ??= {};
     if (!visited.add(library)) return;
 
@@ -144,21 +156,25 @@ $body
   }
 
   /// Loads a [LibraryElement] from a file with caching.
-  Future<LibraryElement?> _getOrLoadLibrary(BuildStep buildStep, AssetId input) async {
+  Future<LibraryElement?> _getOrLoadLibrary(
+      BuildStep buildStep, AssetId input) async {
     final uriStr = input.uri.toString();
     if (_librariesCache.containsKey(uriStr)) return _librariesCache[uriStr];
     try {
-      return _librariesCache[uriStr] = await buildStep.resolver.libraryFor(input);
+      return _librariesCache[uriStr] =
+          await buildStep.resolver.libraryFor(input);
     } catch (_) {
       return _librariesCache[uriStr] = null;
     }
   }
 
   /// Loads a [LibraryElement] by URI with caching.
-  Future<LibraryElement?> _getOrLoadLibraryByUri(BuildStep buildStep, String uriStr) async {
+  Future<LibraryElement?> _getOrLoadLibraryByUri(
+      BuildStep buildStep, String uriStr) async {
     if (_librariesCache.containsKey(uriStr)) return _librariesCache[uriStr];
     try {
-      return _librariesCache[uriStr] = await buildStep.resolver.libraryFor(AssetId.resolve(Uri.parse(uriStr)));
+      return _librariesCache[uriStr] = await buildStep.resolver
+          .libraryFor(AssetId.resolve(Uri.parse(uriStr)));
     } catch (_) {
       return _librariesCache[uriStr] = null;
     }
@@ -166,4 +182,9 @@ $body
 }
 
 /// Factory method to create an instance of [AggregatingArgsBuilder].
-Builder aggregatingArgsBuilder(BuilderOptions options) => AggregatingArgsBuilder();
+Builder aggregatingArgsBuilder(BuilderOptions options) {
+  return AggregatingArgsBuilder(
+    outputPath: options.config['output'] as String? ??
+        'lib/generated/args/router.args.g.dart',
+  );
+}
