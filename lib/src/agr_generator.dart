@@ -80,9 +80,13 @@ class AggregatingArgsBuilder implements Builder {
       }
     }
 
-    // Assign unique prefixes to each import
+// Ensure unique prefixes without conflicts
     for (final uri in allImports) {
-      _uriToPrefix.putIfAbsent(uri, () => '_i${_prefixCounter++}');
+      String newPrefix;
+      do {
+        newPrefix = '_i${_prefixCounter++}';
+      } while (_uriToPrefix.containsValue(newPrefix));
+      _uriToPrefix[uri] = newPrefix;
     }
 
     // Collect top-level classes and enums from imports

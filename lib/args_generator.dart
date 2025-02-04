@@ -13,10 +13,11 @@ export 'src/generator.dart';
 export 'src/agr_generator.dart';
 
 Builder argsGenerator(BuilderOptions options) {
-  final mode = options.config['mode'] as String? ?? 'default';
-  if (mode == 'aggregated') {
-    return aggregatingArgsBuilder(options);
-  } else {
-    return pageArgsGenerator(options);
-  }
+  // final mode = options.config['mode'] as String? ?? 'default';
+  // if (mode == 'aggregated') {
+  //   return aggregatingArgsBuilder(options);
+  // } else {
+  //   return pageArgsGenerator(options);
+  // }
+  return aggregatingArgsBuilder(options);
 }

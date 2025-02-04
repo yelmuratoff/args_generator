@@ -2,8 +2,6 @@ import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:flutter/material.dart';
 import 'package:page_args_generator_example/route_wrapper.dart';
 
-part 'test_page.args.g.dart';
-
 enum TestEnum { value1, value2, value3 }
 
 void main() {

@@ -1,14 +1,20 @@
 # FOR AGGREGATED MODE
 # If you want to generate the router args in a different location,
 # you can change the build_extensions key to the desired location.
-builders:
-  args_generator:
-    import: "package:args_generator/args_generator.dart"
-    builder_factories: ["argsGenerator"]
-    build_extensions: {}
-    auto_apply: root_package
-    build_to: source
-    defaults:
-      options:
-        mode: "aggregated"
-        output: "lib/args/router.args.g.dart"
+# builders:
+#   args_generator:
+#     import: "package:args_generator/args_generator.dart"
+#     builder_factories: ["argsGenerator"]
+#     build_extensions: {}
+#     auto_apply: root_package
+#     build_to: source
+#     defaults:
+#       options:
+#         mode: "aggregated"
+#         output: "lib/args/router.args.g.dart"
+targets:
+  $default:
+    builders:
+      args_generator:
+        options:
+          output: "lib/generator/router.args.g.dart"

@@ -2,8 +2,6 @@ import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:flutter/material.dart';
 import 'package:page_args_generator_example/route_wrapper.dart';
 
-part 'second_page.args.g.dart';
-
 @GenerateArgs()
 class SecondPage extends StatefulWidget implements RouteWrapper {
   const SecondPage({

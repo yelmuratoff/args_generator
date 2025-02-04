@@ -1,8 +1,18 @@
+# builders:
+#   args_generator:
+#     import: "package:args_generator/args_generator.dart"
+#     builder_factories: ["pageArgsGenerator"]
+#     build_extensions: { ".dart": [".args.g.dart"] }
+#     auto_apply: dependents
+#     build_to: source
+#     applies_builders: ["source_gen|combining_builder"]
 builders:
   args_generator:
     import: "package:args_generator/args_generator.dart"
-    builder_factories: ["pageArgsGenerator"]
-    build_extensions: { ".dart": [".args.g.dart"] }
-    auto_apply: dependents
+    builder_factories: ["argsGenerator"]
+    build_extensions: {}
+    auto_apply: root_package
     build_to: source
-    applies_builders: ["source_gen|combining_builder"]
+    defaults:
+      options:
+        output: "lib/args/router.args.g.dart"

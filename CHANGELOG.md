@@ -1,3 +1,7 @@
+## 1.1.0
+
+- Page builder replaced by aggregated builder.
+
 ## 1.0.7
 
 - Added new aggregated builder.
