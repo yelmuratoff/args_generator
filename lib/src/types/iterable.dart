@@ -71,8 +71,8 @@ args.containsKey('$key')
     final name = field.name;
 
     if (isNullable) {
-      return 'if ($name != null) \'$key\': $name!.map((e) => e.toString()).join(",")';
+      return 'if ($name != null && $name!.isNotEmpty) \'$key\': $name!.map((e) => e.toString()).join(",")';
     }
-    return '\'$key\': $name.map((e) => e.toString()).join(",")';
+    return 'if ($name.isNotEmpty) \'$key\': $name.map((e) => e.toString()).join(",")';
   }
 }

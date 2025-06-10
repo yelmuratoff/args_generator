@@ -1,3 +1,7 @@
+## 1.1.1
+
+- Enhance null and empty checks for Iterable and String type helpers
+
 ## 1.1.0
 
 - Page builder replaced by aggregated builder.

@@ -60,8 +60,8 @@ class TypeHelperString extends TypeHelper {
     final name = field.name;
 
     if (isNullable) {
-      return 'if ($name != null) \'$key\': $name!';
+      return 'if ($name != null && $name!.isNotEmpty) \'$key\': $name!';
     }
-    return '\'$key\': $name';
+    return 'if ($name.isNotEmpty) \'$key\': $name';
   }
 }
