@@ -53,8 +53,8 @@ class TypeHelperEnum extends TypeHelper {
 
     final valueExpr = isNullable
         ? (defaultValue != null
-            ? '$valuesExpr.firstOrNull ?? $defaultValue'
-            : '$valuesExpr.firstOrNull')
+              ? '$valuesExpr.firstOrNull ?? $defaultValue'
+              : '$valuesExpr.firstOrNull')
         : '$valuesExpr.first';
     final fallbackExpr = isNullable
         ? (defaultValue ?? 'null')

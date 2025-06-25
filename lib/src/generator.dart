@@ -17,10 +17,7 @@ import 'package:source_gen/source_gen.dart';
 /// Returns:
 /// A [Builder] that integrates with the `build_runner` for source code generation.
 Builder pageArgsGenerator(BuilderOptions options) {
-  return PartBuilder(
-    [PageArgsGenerator()],
-    '.args.g.dart',
-  );
+  return PartBuilder([PageArgsGenerator()], '.args.g.dart');
 }
 
 /// A generator that creates argument classes for pages annotated with `@GenerateArgs`.
@@ -53,11 +50,9 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
 
     final classElement = element;
     final className = classElement.name;
-    final hasRouteWrapper = classElement.methods.any(
-      (interface) {
-        return interface.name == 'wrappedRoute';
-      },
-    );
+    final hasRouteWrapper = classElement.methods.any((interface) {
+      return interface.name == 'wrappedRoute';
+    });
     final argsClassName = '${className}Args';
 
     // Validate the existence of an unnamed constructor.
@@ -82,7 +77,8 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
       for (final helper in TypeHelper.values) {
         if (helper.matchesType(param.type)) {
           constructorParams.add(
-              '${isRequired ? 'required ' : ''}this.${param.name}${defaultValue != null ? ' = $defaultValue' : ''}');
+            '${isRequired ? 'required ' : ''}this.${param.name}${defaultValue != null ? ' = $defaultValue' : ''}',
+          );
         }
       }
     }
@@ -92,8 +88,9 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
     for (final param in parameters) {
       for (final helper in TypeHelper.values) {
         if (helper.matchesType(param.type)) {
-          fieldDeclarations
-              .add('final ${param.type.getDisplayString()} ${param.name};');
+          fieldDeclarations.add(
+            'final ${param.type.getDisplayString()} ${param.name};',
+          );
         }
       }
     }
@@ -122,15 +119,17 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
         .map((field) => field.type.element as EnumElement)
         .toSet();
 
-    final enumMapDeclarations = uniqueEnumFields.map((enumElement) {
-      final enumType = enumElement.name;
-      final enumValues = enumElement.fields
-          .where((e) => e.isEnumConstant)
-          .map((e) => "  $enumType.${e.name}: '${e.name}'")
-          .join(',\n');
+    final enumMapDeclarations = uniqueEnumFields
+        .map((enumElement) {
+          final enumType = enumElement.name;
+          final enumValues = enumElement.fields
+              .where((e) => e.isEnumConstant)
+              .map((e) => "  $enumType.${e.name}: '${e.name}'")
+              .join(',\n');
 
-      return 'static const _\$${enumType}EnumMap = {\n$enumValues\n};';
-    }).join('\n\n');
+          return 'static const _\$${enumType}EnumMap = {\n$enumValues\n};';
+        })
+        .join('\n\n');
 
     final wrapper = hasRouteWrapper ? '.wrappedRoute(context)' : '';
 

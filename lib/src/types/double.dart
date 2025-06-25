@@ -38,8 +38,8 @@ class TypeHelperDouble extends TypeHelper {
 
     return isNullable
         ? (defaultValue != null
-            ? "double.tryParse($arg ?? '$defaultValue')"
-            : "$arg != null ? double.tryParse($arg!) : null")
+              ? "double.tryParse($arg ?? '$defaultValue')"
+              : "$arg != null ? double.tryParse($arg!) : null")
         : "double.parse($arg.toString())";
   }
 

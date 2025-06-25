@@ -44,8 +44,8 @@ class TypeHelperBigInt extends TypeHelper {
 
     return isNullable
         ? (defaultValue != null
-            ? "BigInt.tryParse($arg ?? $defaultValue)"
-            : "$arg != null ? BigInt.tryParse($arg!) : null")
+              ? "BigInt.tryParse($arg ?? $defaultValue)"
+              : "$arg != null ? BigInt.tryParse($arg!) : null")
         : "BigInt.parse($arg.toString())";
   }
 

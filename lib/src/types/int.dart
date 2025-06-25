@@ -38,8 +38,8 @@ class TypeHelperInt extends TypeHelper {
 
     return isNullable
         ? (defaultValue != null
-            ? "int.tryParse($arg ?? '$defaultValue')"
-            : "$arg != null ? int.tryParse($arg!) : null")
+              ? "int.tryParse($arg ?? '$defaultValue')"
+              : "$arg != null ? int.tryParse($arg!) : null")
         : "int.parse($arg.toString())";
   }
 

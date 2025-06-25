@@ -60,15 +60,15 @@ abstract class TypeHelper {
   /// Returns:
   /// A list of [TypeHelper] instances.
   static List<TypeHelper> get values => <TypeHelper>[
-        TypeHelperBigInt(),
-        TypeHelperBool(),
-        TypeHelperDateTime(),
-        TypeHelperDouble(),
-        TypeHelperEnum(),
-        TypeHelperInt(),
-        TypeHelperNum(),
-        TypeHelperString(),
-        TypeHelperUri(),
-        TypeHelperIterable(),
-      ];
+    TypeHelperBigInt(),
+    TypeHelperBool(),
+    TypeHelperDateTime(),
+    TypeHelperDouble(),
+    TypeHelperEnum(),
+    TypeHelperInt(),
+    TypeHelperNum(),
+    TypeHelperString(),
+    TypeHelperUri(),
+    TypeHelperIterable(),
+  ];
 }
