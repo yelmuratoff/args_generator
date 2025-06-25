@@ -7,7 +7,6 @@ import 'package:glob/glob.dart';
 import 'package:source_gen/source_gen.dart';
 
 import 'package:args_generator/args_generator.dart';
-import 'package:args_generator_annotations/args_annotations.dart';
 
 /// A `Builder` that aggregates all classes annotated with `@GenerateArgs`
 /// and generates argument-handling code for them.
@@ -30,7 +29,9 @@ class AggregatingArgsBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final List<String> generatedParts = [];
-    final typeChecker = TypeChecker.fromRuntime(GenerateArgs);
+    final typeChecker = TypeChecker.fromUrl(
+      'package:args_generator_annotations/args_annotations.dart#GenerateArgs',
+    );
     final generator = PageArgsGenerator();
     final SplayTreeSet<String> allImports = SplayTreeSet();
 
