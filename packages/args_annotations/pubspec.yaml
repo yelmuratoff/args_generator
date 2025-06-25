@@ -5,7 +5,7 @@ homepage: https://github.com/yelmuratoff/args_generator
 repository: https://github.com/yelmuratoff/args_generator
 
 environment:
-  sdk: ^3.6.1
+  sdk: ">=3.8.1 <4.0.0"
 
 dependencies: {}
 
