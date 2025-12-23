@@ -1,3 +1,10 @@
+## 1.2.3
+
+- Added aggregated CLI generation via `dart run args_generator` (no `build_runner` required).
+- Added CLI options: `-p/--path` (multiple), `-o/--output`, `-v/--verbose`, `--fail-on-error`.
+- Added `--clean` to delete stale `*.args.g.dart` when a library no longer contains `@GenerateArgs`.
+- Refactored generation internals: introduced a BuildStep-free emitter used by the CLI while keeping `build_runner` support intact.
+
 ## 1.1.1
 
 - Enhance null and empty checks for Iterable and String type helpers

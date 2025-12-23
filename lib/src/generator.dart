@@ -26,6 +26,8 @@ Builder pageArgsGenerator(BuilderOptions options) {
 /// and generating a companion arguments class to facilitate passing data
 /// between routes in a Flutter application.
 class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
+  final PageArgsEmitter _emitter = const PageArgsEmitter();
+
   /// Generates the arguments class for an annotated element.
   ///
   /// - [element]: The annotated element.
@@ -48,29 +50,35 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
       );
     }
 
-    final classElement = element;
+    return _emitter.generateForClass(element);
+  }
+}
+
+/// BuildStep-free generator logic used by the CLI runner.
+class PageArgsEmitter {
+  const PageArgsEmitter();
+
+  String generateForClass(ClassElement classElement) {
     final className = classElement.name;
     final hasRouteWrapper = classElement.methods.any((interface) {
       return interface.name == 'wrappedRoute';
     });
     final argsClassName = '${className}Args';
 
-    // Validate the existence of an unnamed constructor.
     final constructor = classElement.unnamedConstructor;
     if (constructor == null) {
       throw InvalidGenerationSourceError(
         'The class $className must have an unnamed constructor.',
-        element: element,
+        element: classElement,
       );
     }
 
-    // Collect final instance fields and constructor parameters.
     final fields = classElement.fields
         .where((field) => !field.isStatic && field.isFinal)
         .toList();
     final parameters = constructor.parameters;
 
-    final constructorParams = [];
+    final constructorParams = <String>[];
     for (final param in parameters) {
       final isRequired = param.isRequired;
       final defaultValue = param.defaultValueCode;
@@ -83,8 +91,7 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
       }
     }
 
-    // Generate field declarations for the arguments class.
-    final fieldDeclarations = [];
+    final fieldDeclarations = <String>[];
     for (final param in parameters) {
       for (final helper in TypeHelper.values) {
         if (helper.matchesType(param.type)) {
@@ -95,8 +102,7 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
       }
     }
 
-    // Generate the body of the `tryParse` method.
-    final tryParseBody = [];
+    final tryParseBody = <String>[];
     for (final param in parameters) {
       final decodedValue = _decodeField(param);
       if (decodedValue != null) {
@@ -104,8 +110,7 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
       }
     }
 
-    // Generate the body of the `toArguments` method.
-    final toArgumentsBody = [];
+    final toArgumentsBody = <String>[];
     for (final param in parameters) {
       final encodedValue = _encodeField(param);
       if (encodedValue != null) {
@@ -113,7 +118,6 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
       }
     }
 
-    // Generate enum maps for any enum fields.
     final uniqueEnumFields = fields
         .where((field) => field.type.element is EnumElement)
         .map((field) => field.type.element as EnumElement)
@@ -131,7 +135,6 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
 
     final wrapper = hasRouteWrapper ? '.wrappedRoute(context)' : '';
 
-    // Generate the arguments class.
     return '''
 class $argsClassName {
   const $argsClassName({
@@ -179,13 +182,6 @@ class $argsClassName {
 ''';
   }
 
-  /// Decodes a field from the arguments map.
-  ///
-  /// - [field]: The field to decode.
-  /// - [param]: The corresponding parameter.
-  ///
-  /// Returns:
-  /// A string representing the decoding logic for the field.
   String? _decodeField(ParameterElement param) {
     final fieldType = param.type;
     final defaultValue = param.defaultValueCode;
@@ -198,12 +194,6 @@ class $argsClassName {
     return null;
   }
 
-  /// Encodes a field into the arguments map.
-  ///
-  /// - [field]: The field to encode.
-  ///
-  /// Returns:
-  /// A string representing the encoding logic for the field.
   String? _encodeField(ParameterElement field) {
     final fieldType = field.type;
 

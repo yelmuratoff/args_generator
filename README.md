@@ -44,13 +44,54 @@ Run the command to fetch the dependencies:
 
 ```bash
 dart pub get
-dart run build_runner build --delete-conflicting-outputs
 ```
 
 ### Usage
 
+You can generate code in two ways:
+
+### Option A: CLI (recommended)
+
+No `build_runner` needed.
+
+```bash
+dart run args_generator
+```
+
+This generates the aggregated output file (default: `lib/args/router.args.g.dart`).
+
+To override:
+
+```bash
+dart run args_generator --output lib/generator/router.args.g.dart
+```
+
+By default it analyzes `lib/`. You can specify paths:
+
+```bash
+dart run args_generator -p lib -p example/lib
+```
+
+To remove stale generated files when you delete `@GenerateArgs` from a library:
+
+```bash
+dart run args_generator --clean
+```
+
+If you want the process to fail in CI when generation hits an error:
+
+```bash
+dart run args_generator --fail-on-error
+```
+
+### Option B: build_runner
+
+```bash
+dart run build_runner build --delete-conflicting-outputs
+```
+
 1. Annotate your page class with `@GenerateArgs()`.
-2. Run `build_runner` to generate the corresponding arguments class.
+2. Generate `*.args.g.dart` using CLI or `build_runner`.
 
 #### Example
 
