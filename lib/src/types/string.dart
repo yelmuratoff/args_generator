@@ -1,4 +1,3 @@
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:args_generator/src/types/type_helper.dart';
@@ -20,7 +19,7 @@ class TypeHelperString extends TypeHelper {
 
   /// Decodes a `String` value from the provided arguments.
   ///
-  /// - [field]: The [ParameterElement] representing the field to decode.
+  /// - [field]: The field to decode.
   /// - [defaultValue]: An optional default value for the field.
   ///
   /// The method extracts the value associated with the field's name (converted
@@ -31,7 +30,7 @@ class TypeHelperString extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `String` value.
   @override
-  String decode(ParameterElement field, String? defaultValue) {
+  String decode(ArgField field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
@@ -45,7 +44,7 @@ class TypeHelperString extends TypeHelper {
 
   /// Encodes a `String` field into a map format.
   ///
-  /// - [field]: The [ParameterElement] representing the field to encode.
+  /// - [field]: The field to encode.
   ///
   /// If the field is nullable, the generated code includes a conditional check
   /// to ensure the field is not `null` before adding it to the map. The field's
@@ -54,7 +53,7 @@ class TypeHelperString extends TypeHelper {
   /// Returns:
   /// A string representing the code to encode the `String` value.
   @override
-  String encode(ParameterElement field) {
+  String encode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     final name = field.name;

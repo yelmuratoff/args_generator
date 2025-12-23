@@ -1,4 +1,3 @@
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:args_generator/src/utils/helpers.dart';
@@ -13,7 +12,7 @@ const String enumExtensionHelperName = r'_$fromName';
 ///
 /// Returns:
 /// A string representing the name of the enum map.
-String enumMapName(InterfaceType type) => '_\$${type.element.name}EnumMap';
+String enumMapName(InterfaceType type) => '_\$${type.element3.name3}EnumMap';
 
 /// A [TypeHelper] implementation for handling enum fields.
 ///
@@ -31,7 +30,7 @@ class TypeHelperEnum extends TypeHelper {
 
   /// Decodes an enum value from the provided arguments.
   ///
-  /// - [field]: The [ParameterElement] representing the enum field to decode.
+  /// - [field]: The field to decode.
   /// - [defaultValue]: The default value for the field, if any (not used here).
   ///
   /// This method checks if the field's name (converted to kebab-case) exists
@@ -44,17 +43,17 @@ class TypeHelperEnum extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the enum value.
   @override
-  String decode(ParameterElement field, String? defaultValue) {
+  String decode(ArgField field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
-    final enumName = field.type.getDisplayString(withNullability: true);
+    final enumName = field.type.getDisplayString();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     final valuesExpr =
         '${clear(enumName)}.values.where((e) => e.toString().split(\'.\').last == args[\'$key\'])';
 
     final valueExpr = isNullable
         ? (defaultValue != null
-            ? '$valuesExpr.firstOrNull ?? $defaultValue'
-            : '$valuesExpr.firstOrNull')
+              ? '$valuesExpr.firstOrNull ?? $defaultValue'
+              : '$valuesExpr.firstOrNull')
         : '$valuesExpr.first';
     final fallbackExpr = isNullable
         ? (defaultValue ?? 'null')
@@ -69,7 +68,7 @@ args.containsKey('$key')
 
   /// Encodes an enum field into a map format.
   ///
-  /// - [field]: The [ParameterElement] representing the enum field to encode.
+  /// - [field]: The field to encode.
   ///
   /// Uses a generated enum map to encode the enum value into its string
   /// representation. The field's name is converted to kebab-case for use
@@ -79,7 +78,7 @@ args.containsKey('$key')
   /// Returns:
   /// A string representing the code to encode the enum value.
   @override
-  String encode(ParameterElement field) {
+  String encode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final name = field.name;
     return '''

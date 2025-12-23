@@ -1,3 +1,8 @@
+// ignore_for_file: deprecated_member_use
+// NOTE: The CLI currently reuses generation logic built on top of the old
+// analyzer element model (via `source_gen`). A full migration requires an
+// Element2-based emitter.
+
 import 'dart:io';
 import 'dart:collection';
 

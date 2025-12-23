@@ -1,4 +1,3 @@
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:args_generator/src/types/big_int.dart';
 import 'package:args_generator/src/types/bool.dart';
@@ -36,20 +35,20 @@ abstract class TypeHelper {
 
   /// Decodes a field of the handled type from a given map of arguments.
   ///
-  /// - [field]: The [FieldElement] representing the field to decode.
+  /// - [field]: The field to decode.
   /// - [defaultValue]: An optional default value to use if the field value is missing.
   ///
   /// Returns:
   /// A string representing the code for decoding the field value.
-  String decode(ParameterElement field, String? defaultValue);
+  String decode(ArgField field, String? defaultValue);
 
   /// Encodes a field of the handled type into a map format.
   ///
-  /// - [field]: The [FieldElement] representing the field to encode.
+  /// - [field]: The field to encode.
   ///
   /// Returns:
   /// A string representing the code for encoding the field value.
-  String encode(ParameterElement field);
+  String encode(ArgField field);
 
   /// Provides a list of all available type helpers.
   ///
@@ -71,4 +70,15 @@ abstract class TypeHelper {
     TypeHelperUri(),
     TypeHelperIterable(),
   ];
+}
+
+/// Minimal field shape used by [TypeHelper] implementations.
+///
+/// This intentionally avoids depending on analyzer element model classes
+/// (e.g. deprecated `ParameterElement`) and only carries the data we need.
+class ArgField {
+  const ArgField({required this.name, required this.type});
+
+  final String name;
+  final DartType type;
 }

@@ -1,4 +1,3 @@
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:args_generator/src/types/type_helper.dart';
@@ -18,16 +17,16 @@ class TypeHelperUri extends TypeHelper {
   @override
   bool matchesType(DartType type) {
     if (type is InterfaceType) {
-      final element = type.element;
+      final element = type.element3;
 
-      return element.name == 'Uri';
+      return element.name3 == 'Uri';
     }
     return false;
   }
 
   /// Decodes a `Uri` value from the provided arguments.
   ///
-  /// - [field]: The [ParameterElement] representing the field to decode.
+  /// - [field]: The field to decode.
   /// - [defaultValue]: An optional default value for the field (not used here).
   ///
   /// The method checks for the field's name (converted to kebab-case) in the
@@ -38,7 +37,7 @@ class TypeHelperUri extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `Uri` value.
   @override
-  String decode(ParameterElement field, String? defaultValue) {
+  String decode(ArgField field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
     final arg = "args['$key']";
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
@@ -53,7 +52,7 @@ class TypeHelperUri extends TypeHelper {
 
   /// Encodes a `Uri` field into a map format.
   ///
-  /// - [field]: The [ParameterElement] representing the field to encode.
+  /// - [field]: The field to encode.
   ///
   /// If the field is nullable, the generated code includes a conditional check
   /// to ensure the field is not `null` before adding it to the map. The field's
@@ -63,7 +62,7 @@ class TypeHelperUri extends TypeHelper {
   /// Returns:
   /// A string representing the code to encode the `Uri` value.
   @override
-  String encode(ParameterElement field) {
+  String encode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     final name = field.name;

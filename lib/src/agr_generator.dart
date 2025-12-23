@@ -1,3 +1,7 @@
+// ignore_for_file: deprecated_member_use
+// NOTE: `build_resolvers` currently resolves libraries using the deprecated
+// analyzer element model. This builder can't fully migrate until upstream does.
+
 import 'dart:async';
 import 'dart:collection';
 

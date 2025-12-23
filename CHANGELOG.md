@@ -4,6 +4,9 @@
 - Added CLI options: `-p/--path` (multiple), `-o/--output`, `-v/--verbose`, `--fail-on-error`.
 - Added `--clean` to delete stale `*.args.g.dart` when a library no longer contains `@GenerateArgs`.
 - Refactored generation internals: introduced a BuildStep-free emitter used by the CLI while keeping `build_runner` support intact.
+- Reduced analyzer deprecation noise: refactored `TypeHelper` API to work on a lightweight `ArgField` model instead of deprecated analyzer element types.
+- Updated internal type utilities to use the new analyzer element model where possible (e.g. `element3` / `library2`).
+- Added targeted `deprecated_member_use` ignores in generator/build_runner integration where upstream dependencies still require the legacy element model.
 
 ## 1.1.1
 

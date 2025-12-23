@@ -1,6 +1,6 @@
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/dart/element/element2.dart';
 
 /// Extension on [DartType] to provide additional utility methods
 /// for analyzing and working with Dart types.
@@ -15,7 +15,7 @@ extension DartTypeExtension on DartType {
     final me = this;
 
     if (me is InterfaceType) {
-      final library = me.element.library;
+      final library = me.element3.library2;
       return library.typeSystem.isAssignableTo(this, other);
     }
     return true;
@@ -27,7 +27,7 @@ extension DartTypeExtension on DartType {
   /// `true` if this type is an enum; otherwise, `false`.
   bool get isEnum {
     final myType = this;
-    return myType is InterfaceType && myType.element is EnumElement;
+    return myType is InterfaceType && myType.element3 is EnumElement2;
   }
 
   /// Checks if this type is nullable.

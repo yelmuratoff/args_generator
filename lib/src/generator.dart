@@ -1,5 +1,11 @@
+// ignore_for_file: deprecated_member_use
+// NOTE: `source_gen` / `build_resolvers` still expose the old analyzer element
+// model in their public APIs. This file must keep using those types until
+// upstream migrates.
+
 import 'dart:async';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:build/build.dart';
 import 'package:args_generator/src/types/type_helper.dart';
@@ -65,7 +71,15 @@ class PageArgsEmitter {
     });
     final argsClassName = '${className}Args';
 
-    final constructor = classElement.unnamedConstructor;
+    ConstructorElement? unnamedConstructor;
+    for (final constructor in classElement.constructors) {
+      if (constructor.name.isEmpty) {
+        unnamedConstructor = constructor;
+        break;
+      }
+    }
+
+    final constructor = unnamedConstructor;
     if (constructor == null) {
       throw InvalidGenerationSourceError(
         'The class $className must have an unnamed constructor.',
@@ -96,7 +110,7 @@ class PageArgsEmitter {
       for (final helper in TypeHelper.values) {
         if (helper.matchesType(param.type)) {
           fieldDeclarations.add(
-            'final ${param.type.getDisplayString(withNullability: true)} ${param.name};',
+            'final ${param.type.getDisplayString()} ${param.name};',
           );
         }
       }
@@ -104,7 +118,10 @@ class PageArgsEmitter {
 
     final tryParseBody = <String>[];
     for (final param in parameters) {
-      final decodedValue = _decodeField(param);
+      final decodedValue = _decodeField(
+        ArgField(name: param.name, type: param.type),
+        param.defaultValueCode,
+      );
       if (decodedValue != null) {
         tryParseBody.add('${param.name}: $decodedValue');
       }
@@ -112,23 +129,24 @@ class PageArgsEmitter {
 
     final toArgumentsBody = <String>[];
     for (final param in parameters) {
-      final encodedValue = _encodeField(param);
+      final encodedValue = _encodeField(
+        ArgField(name: param.name, type: param.type),
+      );
       if (encodedValue != null) {
         toArgumentsBody.add(encodedValue);
       }
     }
 
     final uniqueEnumFields = fields
-        .where((field) => field.type.element is EnumElement)
-        .map((field) => field.type.element as EnumElement)
+        .where((field) => field.type.element3 is EnumElement2)
+        .map((field) => field.type.element3 as EnumElement2)
         .toSet();
 
     final enumMapDeclarations = uniqueEnumFields
         .map((enumElement) {
-          final enumType = enumElement.name;
-          final enumValues = enumElement.fields
-              .where((e) => e.isEnumConstant)
-              .map((e) => "  $enumType.${e.name}: '${e.name}'")
+          final enumType = enumElement.name3;
+          final enumValues = enumElement.constants2
+              .map((e) => "  $enumType.${e.name3}: '${e.name3}'")
               .join(',\n');
 
           return 'static const _\$${enumType}EnumMap = {\n$enumValues\n};';
@@ -184,23 +202,18 @@ class $argsClassName {
 ''';
   }
 
-  String? _decodeField(ParameterElement param) {
-    final fieldType = param.type;
-    final defaultValue = param.defaultValueCode;
-
+  String? _decodeField(ArgField field, String? defaultValue) {
     for (final helper in TypeHelper.values) {
-      if (helper.matchesType(fieldType)) {
-        return helper.decode(param, defaultValue);
+      if (helper.matchesType(field.type)) {
+        return helper.decode(field, defaultValue);
       }
     }
     return null;
   }
 
-  String? _encodeField(ParameterElement field) {
-    final fieldType = field.type;
-
+  String? _encodeField(ArgField field) {
     for (final helper in TypeHelper.values) {
-      if (helper.matchesType(fieldType)) {
+      if (helper.matchesType(field.type)) {
         return helper.encode(field);
       }
     }
