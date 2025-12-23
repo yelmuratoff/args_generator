@@ -1,4 +1,4 @@
-## 1.2.5
+## 1.2.6
 
 - Added aggregated CLI generation via `dart run args_generator` (no `build_runner` required).
 - Added CLI options: `-p/--path` (multiple), `-o/--output`, `-v/--verbose`, `--fail-on-error`.
