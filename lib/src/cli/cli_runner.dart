@@ -68,6 +68,7 @@ class ArgsGeneratorCliRunner {
     final generatedParts = <String>[];
     final allImports = SplayTreeSet<String>();
     final librariesByUri = <String, LibraryElement>{};
+    final annotatedUris = <String>{};
 
     for (final context in collection.contexts) {
       final session = context.currentSession;
@@ -126,6 +127,8 @@ class ArgsGeneratorCliRunner {
           }
 
           final uriStr = resolved.element.source.uri.toString();
+          annotatedUris.add(uriStr);
+
           if (!uriStr.startsWith('dart:')) {
             allImports.add(uriStr);
             librariesByUri[uriStr] = resolved.element;
@@ -200,6 +203,14 @@ class ArgsGeneratorCliRunner {
         .map((uri) {
           final prefix = uriToPrefix[uri]!;
           return "import '$uri' as $prefix;";
+        })
+        .where((line) {
+          final match = RegExp("import '(.*)' as (\\S+);").firstMatch(line);
+          if (match == null) return false;
+          final importUri = match.group(1)!;
+          final importPrefix = match.group(2)!;
+          return annotatedUris.contains(importUri) ||
+              body.contains('$importPrefix.');
         })
         .toList(growable: false);
 
