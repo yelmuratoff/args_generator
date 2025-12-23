@@ -42,14 +42,7 @@ class TypeHelperIterable extends TypeHelper {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
-    return '''
-args.containsKey('$key')
-  ? args['$key']!
-      .split(',')
-      .map((e) => e)
-      .toList()
-  : ${isNullable ? 'null' : '[]'}
-''';
+    return "args.containsKey('$key') ? args['$key']!.split(',').map((e) => e).toList() : ${isNullable ? 'null' : '[]'}";
   }
 
   /// Encodes an `Iterable` field into a map format.

@@ -59,11 +59,7 @@ class TypeHelperEnum extends TypeHelper {
         ? (defaultValue ?? 'null')
         : (defaultValue ?? '$enumName.values.first');
 
-    return '''
-args.containsKey('$key')
-  ? $valueExpr
-  : $fallbackExpr
-''';
+    return "args.containsKey('$key') ? $valueExpr : $fallbackExpr";
   }
 
   /// Encodes an enum field into a map format.
@@ -81,10 +77,7 @@ args.containsKey('$key')
   String encode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final name = field.name;
-    return '''
-if (${enumMapName(field.type as InterfaceType)}[$name] != null)
-  '$key': ${enumMapName(field.type as InterfaceType)}[$name]!
-''';
+    return "if (${enumMapName(field.type as InterfaceType)}[$name] != null) '$key': ${enumMapName(field.type as InterfaceType)}[$name]!";
   }
 
   /// Cleans the provided [text] by removing whitespace, digits, and non-word characters.

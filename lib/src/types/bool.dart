@@ -34,11 +34,7 @@ class TypeHelperBool extends TypeHelper {
   String decode(ArgField field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
-    return '''
-args.containsKey('$key')
-  ? (args['$key']?.toLowerCase() == 'true')
-  : ${isNullable ? 'null' : 'false'}
-''';
+    return "args.containsKey('$key') ? (args['$key']?.toLowerCase() == 'true') : ${isNullable ? 'null' : 'false'}";
   }
 
   /// Encodes a `bool` field into a map format.
