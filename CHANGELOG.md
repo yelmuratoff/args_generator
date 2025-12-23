@@ -1,3 +1,11 @@
+## 1.0.5
+
+- Added CLI generation via `dart run args_generator` (no `build_runner` required).
+- Added CLI options: `-p/--path` (multiple), `-v/--verbose`, `--fail-on-error`.
+- Added `--clean` to delete stale `*.args.g.dart` when a library no longer contains `@GenerateArgs`.
+- Refactored generation internals: introduced a BuildStep-free emitter used by the CLI while keeping `build_runner` support intact.
+- Updated documentation and added small CLI runner tests.
+
 ## 1.0.4
 
 - If the page has a `wrappedRoute` method, then it will be used in the `builder`.
