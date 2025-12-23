@@ -49,7 +49,37 @@ dart run build_runner build --delete-conflicting-outputs
 
 ### Usage
 
-1. Annotate your page class with `@GenerateArgs()`.
+You can generate code in two ways:
+
+### Option A: CLI (recommended)
+
+No `build_runner` needed.
+
+```bash
+dart run args_generator
+```
+
+By default it analyzes `lib/`. You can specify paths:
+
+```bash
+dart run args_generator -p lib -p example/lib
+```
+
+If you want the process to fail in CI when generation hits an error:
+
+```bash
+dart run args_generator --fail-on-error
+```
+
+To remove stale generated files when you delete `@GenerateArgs` from a library:
+
+```bash
+dart run args_generator --clean
+```
+
+### Option B: build_runner
+
+Add `args_generator` to your `dev_dependencies` and configure `build_runner`.
 2. Run `build_runner` to generate the corresponding arguments class.
 
 #### Example
