@@ -103,8 +103,8 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
     for (final param in parameters) {
       for (final helper in TypeHelper.values) {
         if (helper.matchesType(param.type)) {
-          fieldDeclarations
-              .add('final ${param.type.getDisplayString()} ${param.name};');
+          fieldDeclarations.add(
+              'final ${param.type.getDisplayString(withNullability: true)} ${param.name};');
         }
       }
     }
