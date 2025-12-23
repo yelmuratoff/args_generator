@@ -123,15 +123,17 @@ class PageArgsEmitter {
         .map((field) => field.type.element as EnumElement)
         .toSet();
 
-    final enumMapDeclarations = uniqueEnumFields.map((enumElement) {
-      final enumType = enumElement.name;
-      final enumValues = enumElement.fields
-          .where((e) => e.isEnumConstant)
-          .map((e) => "  $enumType.${e.name}: '${e.name}'")
-          .join(',\n');
+    final enumMapDeclarations = uniqueEnumFields
+        .map((enumElement) {
+          final enumType = enumElement.name;
+          final enumValues = enumElement.fields
+              .where((e) => e.isEnumConstant)
+              .map((e) => "  $enumType.${e.name}: '${e.name}'")
+              .join(',\n');
 
-      return 'static const _\$${enumType}EnumMap = {\n$enumValues\n};';
-    }).join('\n\n');
+          return 'static const _\$${enumType}EnumMap = {\n$enumValues\n};';
+        })
+        .join('\n\n');
 
     final wrapper = hasRouteWrapper ? '.wrappedRoute(context)' : '';
 

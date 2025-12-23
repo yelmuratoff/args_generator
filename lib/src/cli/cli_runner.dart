@@ -84,13 +84,16 @@ class ArgsGeneratorCliRunner {
           continue;
         }
 
-        final isPartOf = parsed.unit.directives.any((d) => d is PartOfDirective);
+        final isPartOf = parsed.unit.directives.any(
+          (d) => d is PartOfDirective,
+        );
         if (isPartOf) {
           continue;
         }
 
-        final resolved =
-            await Future.sync(() => session.getResolvedLibrary(filePath));
+        final resolved = await Future.sync(
+          () => session.getResolvedLibrary(filePath),
+        );
         if (resolved is! ResolvedLibraryResult) {
           continue;
         }
@@ -188,10 +191,12 @@ class ArgsGeneratorCliRunner {
       );
     });
 
-    final imports = allImports.map((uri) {
-      final prefix = uriToPrefix[uri]!;
-      return "import '$uri' as $prefix;";
-    }).toList(growable: false);
+    final imports = allImports
+        .map((uri) {
+          final prefix = uriToPrefix[uri]!;
+          return "import '$uri' as $prefix;";
+        })
+        .toList(growable: false);
 
     // Keep all imports (fast + deterministic). The generated body uses prefixes.
     final output = [
@@ -204,7 +209,9 @@ class ArgsGeneratorCliRunner {
       '',
     ].join('\n');
 
-    final existing = outputFile.existsSync() ? outputFile.readAsStringSync() : null;
+    final existing = outputFile.existsSync()
+        ? outputFile.readAsStringSync()
+        : null;
     if (existing == output) {
       skipped++;
       return ArgsGeneratorRunSummary(

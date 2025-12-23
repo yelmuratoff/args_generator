@@ -56,7 +56,9 @@ Future<void> main(List<String> arguments) async {
   }
 
   final projectRoot = Directory.current;
-  final pubspec = File('${projectRoot.path}${Platform.pathSeparator}pubspec.yaml');
+  final pubspec = File(
+    '${projectRoot.path}${Platform.pathSeparator}pubspec.yaml',
+  );
   if (!pubspec.existsSync()) {
     stderr.writeln(
       'No pubspec.yaml found in: ${projectRoot.path}\n'
