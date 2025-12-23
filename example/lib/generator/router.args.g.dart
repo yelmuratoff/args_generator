@@ -69,79 +69,40 @@ class TestPageArgs {
   static TestPageArgs? tryParse(Map<String, String> args) {
     try {
       return TestPageArgs(
-          bigIntValue: BigInt.parse(args['big-int-value'].toString()),
-          boolValue: args.containsKey('bool-value')
-              ? (args['bool-value']?.toLowerCase() == 'true')
-              : false,
-          dateTimeValue: DateTime.parse(args['date-time-value'].toString()),
-          doubleValue: double.parse(args['double-value'].toString()),
-          typeValue: args.containsKey('type-value')
-              ? _i2.TestEnum.values
-                  .where(
-                      (e) => e.toString().split('.').last == args['type-value'])
-                  .first
-              : _i2.TestEnum.values.first,
-          intValue: int.parse(args['int-value'].toString()),
-          numValue: num.parse(args['num-value'].toString()),
-          stringValue: args['string-value'] ?? '',
-          uriValue: Uri.parse(args['uri-value'].toString()),
-          iterableValue: args.containsKey('iterable-value')
-              ? args['iterable-value']!.split(',').map((e) => e).toList()
-              : [],
-          optionalBigInt: args['optional-big-int'] != null
-              ? BigInt.tryParse(args['optional-big-int']!)
-              : null,
-          optionalBool: args.containsKey('optional-bool')
-              ? (args['optional-bool']?.toLowerCase() == 'true')
-              : null,
-          optionalDateTime: args['optional-date-time'] != null
-              ? DateTime.tryParse(args['optional-date-time']!)
-              : null,
-          optionalDouble: args['optional-double'] != null
-              ? double.tryParse(args['optional-double']!)
-              : null,
-          optionalType: args.containsKey('optional-type')
-              ? _i2.TestEnum.values
-                  .where((e) =>
-                      e.toString().split('.').last == args['optional-type'])
-                  .firstOrNull
-              : null,
-          optionalInt: args['optional-int'] != null
-              ? int.tryParse(args['optional-int']!)
-              : null,
-          optionalNum: args['optional-num'] != null
-              ? num.tryParse(args['optional-num']!)
-              : null,
-          optionalString: args['optional-string'],
-          optionalUri: args['optional-uri'] != null
-              ? Uri.tryParse(args['optional-uri']!)
-              : null,
-          optionalIterable: args.containsKey('optional-iterable')
-              ? args['optional-iterable']!.split(',').map((e) => e).toList()
-              : null,
-          defaultBool: args.containsKey('default-bool')
-              ? (args['default-bool']?.toLowerCase() == 'true')
-              : null,
-          defaultDouble: double.tryParse(args['default-double'] ?? '0.0'),
-          defType: args.containsKey('def-type')
-              ? _i2.TestEnum.values
-                      .where((e) =>
-                          e.toString().split('.').last == args['def-type'])
-                      .firstOrNull ??
-                  _i2.TestEnum.value3
-              : _i2.TestEnum.value3,
-          defaultInt: int.tryParse(args['default-int'] ?? '0'),
-          defaultNum: num.tryParse(args['default-num'] ?? '0'),
-          defaultString: args['default-string'] ?? '',
-          defaultIterable: args.containsKey('default-iterable')
-              ? args['default-iterable']!.split(',').map((e) => e).toList()
-              : null);
+        bigIntValue: BigInt.parse(args['big-int-value'].toString()),
+        boolValue: args.containsKey('bool-value') ? (args['bool-value']?.toLowerCase() == 'true') : false,
+        dateTimeValue: DateTime.parse(args['date-time-value'].toString()),
+        doubleValue: double.parse(args['double-value'].toString()),
+        typeValue: args.containsKey('type-value') ? _i2.TestEnum.values.where((e) => e.toString().split('.').last == args['type-value']).first : _i2.TestEnum.values.first,
+        intValue: int.parse(args['int-value'].toString()),
+        numValue: num.parse(args['num-value'].toString()),
+        stringValue: args['string-value'] ?? '',
+        uriValue: Uri.parse(args['uri-value'].toString()),
+        iterableValue: args.containsKey('iterable-value') ? args['iterable-value']!.split(',').map((e) => e).toList() : [],
+        optionalBigInt: args['optional-big-int'] != null ? BigInt.tryParse(args['optional-big-int']!) : null,
+        optionalBool: args.containsKey('optional-bool') ? (args['optional-bool']?.toLowerCase() == 'true') : null,
+        optionalDateTime: args['optional-date-time'] != null ? DateTime.tryParse(args['optional-date-time']!) : null,
+        optionalDouble: args['optional-double'] != null ? double.tryParse(args['optional-double']!) : null,
+        optionalType: args.containsKey('optional-type') ? _i2.TestEnum.values.where((e) => e.toString().split('.').last == args['optional-type']).firstOrNull : null,
+        optionalInt: args['optional-int'] != null ? int.tryParse(args['optional-int']!) : null,
+        optionalNum: args['optional-num'] != null ? num.tryParse(args['optional-num']!) : null,
+        optionalString: args['optional-string'],
+        optionalUri: args['optional-uri'] != null ? Uri.tryParse(args['optional-uri']!) : null,
+        optionalIterable: args.containsKey('optional-iterable') ? args['optional-iterable']!.split(',').map((e) => e).toList() : null,
+        defaultBool: args.containsKey('default-bool') ? (args['default-bool']?.toLowerCase() == 'true') : null,
+        defaultDouble: double.tryParse(args['default-double'] ?? '0.0'),
+        defType: args.containsKey('def-type') ? _i2.TestEnum.values.where((e) => e.toString().split('.').last == args['def-type']).firstOrNull ?? _i2.TestEnum.value3 : _i2.TestEnum.value3,
+        defaultInt: int.tryParse(args['default-int'] ?? '0'),
+        defaultNum: num.tryParse(args['default-num'] ?? '0'),
+        defaultString: args['default-string'] ?? '',
+        defaultIterable: args.containsKey('default-iterable') ? args['default-iterable']!.split(',').map((e) => e).toList() : null
+      );
     } catch (e) {
       return null;
     }
   }
 
-  /// A builder method for creating the associated widget from arguments.
+   /// A builder method for creating the associated widget from arguments.
   static _i1.Widget builder(
     _i1.BuildContext context, {
     required Map<String, String> arguments,
@@ -190,50 +151,38 @@ class TestPageArgs {
         'bool-value': boolValue.toString(),
         'date-time-value': dateTimeValue.toIso8601String(),
         'double-value': doubleValue.toString(),
-        if (_$TestEnumEnumMap[typeValue] != null)
-          'type-value': _$TestEnumEnumMap[typeValue]!,
+        if (_$TestEnumEnumMap[typeValue] != null) 'type-value': _$TestEnumEnumMap[typeValue]!,
         'int-value': intValue.toString(),
         'num-value': numValue.toString(),
         if (stringValue.isNotEmpty) 'string-value': stringValue,
         'uri-value': uriValue.toString(),
-        if (iterableValue.isNotEmpty)
-          'iterable-value': iterableValue.map((e) => e.toString()).join(","),
-        if (optionalBigInt != null)
-          'optional-big-int': optionalBigInt.toString(),
+        if (iterableValue.isNotEmpty) 'iterable-value': iterableValue.map((e) => e.toString()).join(","),
+        if (optionalBigInt != null) 'optional-big-int': optionalBigInt.toString(),
         if (optionalBool != null) 'optional-bool': optionalBool.toString(),
-        if (optionalDateTime != null)
-          'optional-date-time': optionalDateTime!.toIso8601String(),
-        if (optionalDouble != null)
-          'optional-double': optionalDouble.toString(),
-        if (_$TestEnumEnumMap[optionalType] != null)
-          'optional-type': _$TestEnumEnumMap[optionalType]!,
+        if (optionalDateTime != null) 'optional-date-time': optionalDateTime!.toIso8601String(),
+        if (optionalDouble != null) 'optional-double': optionalDouble.toString(),
+        if (_$TestEnumEnumMap[optionalType] != null) 'optional-type': _$TestEnumEnumMap[optionalType]!,
         if (optionalInt != null) 'optional-int': optionalInt.toString(),
         if (optionalNum != null) 'optional-num': optionalNum.toString(),
-        if (optionalString != null && optionalString!.isNotEmpty)
-          'optional-string': optionalString!,
+        if (optionalString != null && optionalString!.isNotEmpty) 'optional-string': optionalString!,
         if (optionalUri != null) 'optional-uri': optionalUri.toString(),
-        if (optionalIterable != null && optionalIterable!.isNotEmpty)
-          'optional-iterable':
-              optionalIterable!.map((e) => e.toString()).join(","),
+        if (optionalIterable != null && optionalIterable!.isNotEmpty) 'optional-iterable': optionalIterable!.map((e) => e.toString()).join(","),
         if (defaultBool != null) 'default-bool': defaultBool.toString(),
         if (defaultDouble != null) 'default-double': defaultDouble.toString(),
-        if (_$TestEnumEnumMap[defType] != null)
-          'def-type': _$TestEnumEnumMap[defType]!,
+        if (_$TestEnumEnumMap[defType] != null) 'def-type': _$TestEnumEnumMap[defType]!,
         if (defaultInt != null) 'default-int': defaultInt.toString(),
         if (defaultNum != null) 'default-num': defaultNum.toString(),
-        if (defaultString != null && defaultString!.isNotEmpty)
-          'default-string': defaultString!,
-        if (defaultIterable != null && defaultIterable!.isNotEmpty)
-          'default-iterable':
-              defaultIterable!.map((e) => e.toString()).join(",")
+        if (defaultString != null && defaultString!.isNotEmpty) 'default-string': defaultString!,
+        if (defaultIterable != null && defaultIterable!.isNotEmpty) 'default-iterable': defaultIterable!.map((e) => e.toString()).join(",")
       };
 
   static const _$TestEnumEnumMap = {
-    _i2.TestEnum.value1: 'value1',
-    _i2.TestEnum.value2: 'value2',
-    _i2.TestEnum.value3: 'value3'
-  };
+  _i2.TestEnum.value1: 'value1',
+  _i2.TestEnum.value2: 'value2',
+  _i2.TestEnum.value3: 'value3'
+};
 }
+
 
 class SecondPageArgs {
   const SecondPageArgs({
@@ -293,60 +242,37 @@ class SecondPageArgs {
   static SecondPageArgs? tryParse(Map<String, String> args) {
     try {
       return SecondPageArgs(
-          bigIntValue: BigInt.parse(args['big-int-value'].toString()),
-          boolValue: args.containsKey('bool-value')
-              ? (args['bool-value']?.toLowerCase() == 'true')
-              : false,
-          dateTimeValue: DateTime.parse(args['date-time-value'].toString()),
-          doubleValue: double.parse(args['double-value'].toString()),
-          intValue: int.parse(args['int-value'].toString()),
-          numValue: num.parse(args['num-value'].toString()),
-          stringValue: args['string-value'] ?? '',
-          uriValue: Uri.parse(args['uri-value'].toString()),
-          iterableValue: args.containsKey('iterable-value')
-              ? args['iterable-value']!.split(',').map((e) => e).toList()
-              : [],
-          optionalBigInt: args['optional-big-int'] != null
-              ? BigInt.tryParse(args['optional-big-int']!)
-              : null,
-          optionalBool: args.containsKey('optional-bool')
-              ? (args['optional-bool']?.toLowerCase() == 'true')
-              : null,
-          optionalDateTime: args['optional-date-time'] != null
-              ? DateTime.tryParse(args['optional-date-time']!)
-              : null,
-          optionalDouble: args['optional-double'] != null
-              ? double.tryParse(args['optional-double']!)
-              : null,
-          optionalInt: args['optional-int'] != null
-              ? int.tryParse(args['optional-int']!)
-              : null,
-          optionalNum: args['optional-num'] != null
-              ? num.tryParse(args['optional-num']!)
-              : null,
-          optionalString: args['optional-string'],
-          optionalUri: args['optional-uri'] != null
-              ? Uri.tryParse(args['optional-uri']!)
-              : null,
-          optionalIterable: args.containsKey('optional-iterable')
-              ? args['optional-iterable']!.split(',').map((e) => e).toList()
-              : null,
-          defaultBool: args.containsKey('default-bool')
-              ? (args['default-bool']?.toLowerCase() == 'true')
-              : null,
-          defaultDouble: double.tryParse(args['default-double'] ?? '0.0'),
-          defaultInt: int.tryParse(args['default-int'] ?? '0'),
-          defaultNum: num.tryParse(args['default-num'] ?? '0'),
-          defaultString: args['default-string'] ?? '',
-          defaultIterable: args.containsKey('default-iterable')
-              ? args['default-iterable']!.split(',').map((e) => e).toList()
-              : null);
+        bigIntValue: BigInt.parse(args['big-int-value'].toString()),
+        boolValue: args.containsKey('bool-value') ? (args['bool-value']?.toLowerCase() == 'true') : false,
+        dateTimeValue: DateTime.parse(args['date-time-value'].toString()),
+        doubleValue: double.parse(args['double-value'].toString()),
+        intValue: int.parse(args['int-value'].toString()),
+        numValue: num.parse(args['num-value'].toString()),
+        stringValue: args['string-value'] ?? '',
+        uriValue: Uri.parse(args['uri-value'].toString()),
+        iterableValue: args.containsKey('iterable-value') ? args['iterable-value']!.split(',').map((e) => e).toList() : [],
+        optionalBigInt: args['optional-big-int'] != null ? BigInt.tryParse(args['optional-big-int']!) : null,
+        optionalBool: args.containsKey('optional-bool') ? (args['optional-bool']?.toLowerCase() == 'true') : null,
+        optionalDateTime: args['optional-date-time'] != null ? DateTime.tryParse(args['optional-date-time']!) : null,
+        optionalDouble: args['optional-double'] != null ? double.tryParse(args['optional-double']!) : null,
+        optionalInt: args['optional-int'] != null ? int.tryParse(args['optional-int']!) : null,
+        optionalNum: args['optional-num'] != null ? num.tryParse(args['optional-num']!) : null,
+        optionalString: args['optional-string'],
+        optionalUri: args['optional-uri'] != null ? Uri.tryParse(args['optional-uri']!) : null,
+        optionalIterable: args.containsKey('optional-iterable') ? args['optional-iterable']!.split(',').map((e) => e).toList() : null,
+        defaultBool: args.containsKey('default-bool') ? (args['default-bool']?.toLowerCase() == 'true') : null,
+        defaultDouble: double.tryParse(args['default-double'] ?? '0.0'),
+        defaultInt: int.tryParse(args['default-int'] ?? '0'),
+        defaultNum: num.tryParse(args['default-num'] ?? '0'),
+        defaultString: args['default-string'] ?? '',
+        defaultIterable: args.containsKey('default-iterable') ? args['default-iterable']!.split(',').map((e) => e).toList() : null
+      );
     } catch (e) {
       return null;
     }
   }
 
-  /// A builder method for creating the associated widget from arguments.
+   /// A builder method for creating the associated widget from arguments.
   static _i1.Widget builder(
     _i1.BuildContext context, {
     required Map<String, String> arguments,
@@ -396,31 +322,24 @@ class SecondPageArgs {
         'num-value': numValue.toString(),
         if (stringValue.isNotEmpty) 'string-value': stringValue,
         'uri-value': uriValue.toString(),
-        if (iterableValue.isNotEmpty)
-          'iterable-value': iterableValue.map((e) => e.toString()).join(","),
-        if (optionalBigInt != null)
-          'optional-big-int': optionalBigInt.toString(),
+        if (iterableValue.isNotEmpty) 'iterable-value': iterableValue.map((e) => e.toString()).join(","),
+        if (optionalBigInt != null) 'optional-big-int': optionalBigInt.toString(),
         if (optionalBool != null) 'optional-bool': optionalBool.toString(),
-        if (optionalDateTime != null)
-          'optional-date-time': optionalDateTime!.toIso8601String(),
-        if (optionalDouble != null)
-          'optional-double': optionalDouble.toString(),
+        if (optionalDateTime != null) 'optional-date-time': optionalDateTime!.toIso8601String(),
+        if (optionalDouble != null) 'optional-double': optionalDouble.toString(),
         if (optionalInt != null) 'optional-int': optionalInt.toString(),
         if (optionalNum != null) 'optional-num': optionalNum.toString(),
-        if (optionalString != null && optionalString!.isNotEmpty)
-          'optional-string': optionalString!,
+        if (optionalString != null && optionalString!.isNotEmpty) 'optional-string': optionalString!,
         if (optionalUri != null) 'optional-uri': optionalUri.toString(),
-        if (optionalIterable != null && optionalIterable!.isNotEmpty)
-          'optional-iterable':
-              optionalIterable!.map((e) => e.toString()).join(","),
+        if (optionalIterable != null && optionalIterable!.isNotEmpty) 'optional-iterable': optionalIterable!.map((e) => e.toString()).join(","),
         if (defaultBool != null) 'default-bool': defaultBool.toString(),
         if (defaultDouble != null) 'default-double': defaultDouble.toString(),
         if (defaultInt != null) 'default-int': defaultInt.toString(),
         if (defaultNum != null) 'default-num': defaultNum.toString(),
-        if (defaultString != null && defaultString!.isNotEmpty)
-          'default-string': defaultString!,
-        if (defaultIterable != null && defaultIterable!.isNotEmpty)
-          'default-iterable':
-              defaultIterable!.map((e) => e.toString()).join(",")
+        if (defaultString != null && defaultString!.isNotEmpty) 'default-string': defaultString!,
+        if (defaultIterable != null && defaultIterable!.isNotEmpty) 'default-iterable': defaultIterable!.map((e) => e.toString()).join(",")
       };
+
+  
 }
+
