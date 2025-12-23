@@ -49,6 +49,10 @@ class ArgsGeneratorCliRunner {
       );
     }
 
+    if (verbose) {
+      stdout.writeln('Initializing analysis context...');
+    }
+
     final collection = AnalysisContextCollection(
       includedPaths: absoluteIncludePaths,
       resourceProvider: PhysicalResourceProvider.INSTANCE,
@@ -70,6 +74,10 @@ class ArgsGeneratorCliRunner {
     final librariesByUri = <String, LibraryElement>{};
     final annotatedUris = <String>{};
 
+    if (verbose) {
+      stdout.writeln('Analyzing source files...');
+    }
+
     for (final context in collection.contexts) {
       final session = context.currentSession;
       final analyzedFiles = context.contextRoot
@@ -85,7 +93,7 @@ class ArgsGeneratorCliRunner {
           continue;
         }
 
-        final parsed = await Future.sync(() => session.getParsedUnit(filePath));
+        final parsed = session.getParsedUnit(filePath);
         if (parsed is! ParsedUnitResult) {
           continue;
         }
@@ -97,9 +105,7 @@ class ArgsGeneratorCliRunner {
           continue;
         }
 
-        final resolved = await Future.sync(
-          () => session.getResolvedLibrary(filePath),
-        );
+        final resolved = await session.getResolvedLibrary(filePath);
         if (resolved is! ResolvedLibraryResult) {
           continue;
         }
@@ -111,7 +117,7 @@ class ArgsGeneratorCliRunner {
         }
 
         if (verbose) {
-          stdout.writeln('Collecting: ${_prettyPath(projectRoot, filePath)}');
+          stdout.writeln('Processing: ${_prettyPath(projectRoot, filePath)}');
         }
 
         try {
@@ -152,11 +158,17 @@ class ArgsGeneratorCliRunner {
     }
 
     if (generatedParts.isEmpty) {
+      if (verbose) {
+        stdout.writeln('No annotated classes found.');
+      }
       if (shouldDeleteStaleOutput(
         clean: clean,
         hasAnnotatedElements: false,
         outputExists: outputFile.existsSync(),
       )) {
+        if (verbose) {
+          stdout.writeln('Deleting stale output file: $outputPath');
+        }
         outputFile.deleteSync();
         deleted++;
       }
@@ -166,6 +178,10 @@ class ArgsGeneratorCliRunner {
         skippedFiles: skipped,
         errors: errors,
       );
+    }
+
+    if (verbose) {
+      stdout.writeln('Generating code and resolving imports...');
     }
 
     // Assign unique prefixes.
@@ -179,15 +195,34 @@ class ArgsGeneratorCliRunner {
       uriToPrefix[uri] = prefix;
     }
 
+    // Extract all used names from generated code to optimize export traversal
+    final usedNames = <String>{};
+    final tokenRegex = RegExp(r'\b[a-zA-Z_$][a-zA-Z0-9_$]*\b');
+    for (final part in generatedParts) {
+      usedNames.addAll(tokenRegex.allMatches(part).map((m) => m.group(0)!));
+    }
+
+    if (verbose) {
+      stdout.writeln('Resolving top-level names for prefixing...');
+    }
+
     // Collect top-level classes/enums to prefix.
     final classToPrefix = <String, String>{};
+    final libraryExportsCache = <LibraryElement, Set<String>>{};
+
     for (final uri in allImports) {
       final prefix = uriToPrefix[uri]!;
       final library = librariesByUri[uri];
       if (library == null) {
         continue;
       }
-      await _collectTopLevelNames(library, prefix, classToPrefix);
+
+      final exportedNames = _getAllExportedNames(library, libraryExportsCache);
+      for (final name in exportedNames) {
+        if (usedNames.contains(name)) {
+          classToPrefix[name] = prefix;
+        }
+      }
     }
 
     // Replace class names with their respective prefixes.
@@ -229,6 +264,9 @@ class ArgsGeneratorCliRunner {
         ? outputFile.readAsStringSync()
         : null;
     if (existing == output) {
+      if (verbose) {
+        stdout.writeln('Output file is up to date.');
+      }
       skipped++;
       return ArgsGeneratorRunSummary(
         writtenFiles: written,
@@ -236,6 +274,10 @@ class ArgsGeneratorCliRunner {
         skippedFiles: skipped,
         errors: errors,
       );
+    }
+
+    if (verbose) {
+      stdout.writeln('Writing output to: $outputPath');
     }
 
     outputFile.parent.createSync(recursive: true);
@@ -295,35 +337,32 @@ String _basename(String filePath) {
   return idx == -1 ? filePath : filePath.substring(idx + 1);
 }
 
-Future<void> _collectTopLevelNames(
-  LibraryElement library,
-  String prefix,
-  Map<String, String> classToPrefix, {
-  Set<LibraryElement>? visited,
-}) async {
-  visited ??= <LibraryElement>{};
-  if (!visited.add(library)) {
-    return;
+Set<String> _getAllExportedNames(
+  LibraryElement lib,
+  Map<LibraryElement, Set<String>> cache,
+) {
+  if (cache.containsKey(lib)) {
+    return cache[lib]!;
   }
 
-  for (final el in library.topLevelElements) {
+  final names = <String>{};
+  cache[lib] = names; // Initialize with empty to handle cycles
+
+  for (final el in lib.topLevelElements) {
     if (el is ClassElement || el is EnumElement) {
       final name = el.name;
       if (name != null && name.isNotEmpty) {
-        classToPrefix[name] = prefix;
+        names.add(name);
       }
     }
   }
 
-  for (final exported in library.exportedLibraries) {
+  for (final exported in lib.exportedLibraries) {
     final uri = exported.source.uri.toString();
     if (!uri.startsWith('dart:')) {
-      await _collectTopLevelNames(
-        exported,
-        prefix,
-        classToPrefix,
-        visited: visited,
-      );
+      names.addAll(_getAllExportedNames(exported, cache));
     }
   }
+
+  return names;
 }

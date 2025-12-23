@@ -28,6 +28,7 @@ class AggregatingArgsBuilder implements Builder {
   final Map<String, String> _classToPrefix = {};
   final Set<String> _annotatedUris = {};
   final Map<String, LibraryElement?> _librariesCache = {};
+  final Map<LibraryElement, Set<String>> _libraryExportsCache = {};
   int _prefixCounter = 0;
 
   @override
@@ -38,6 +39,8 @@ class AggregatingArgsBuilder implements Builder {
     );
     final generator = PageArgsGenerator();
     final SplayTreeSet<String> allImports = SplayTreeSet();
+
+    log.info('Starting args_generator analysis...');
 
     // Process all Dart files, skipping generated files (*.g.dart)
     await for (final input in buildStep.findAssets(Glob('lib/**.dart'))) {
@@ -83,21 +86,46 @@ class AggregatingArgsBuilder implements Builder {
       }
     }
 
+    if (generatedParts.isEmpty) {
+      // Clean up if needed, though build_runner handles file deletions usually.
+      return;
+    }
+
+    log.info('Generating code and resolving imports...');
+
     // Ensure unique prefixes without conflicts
     for (final uri in allImports) {
-      String newPrefix;
-      do {
-        newPrefix = '_i${_prefixCounter++}';
-      } while (_uriToPrefix.containsValue(newPrefix));
-      _uriToPrefix[uri] = newPrefix;
+      if (!_uriToPrefix.containsKey(uri)) {
+        String newPrefix;
+        do {
+          newPrefix = '_i${_prefixCounter++}';
+        } while (_uriToPrefix.containsValue(newPrefix));
+        _uriToPrefix[uri] = newPrefix;
+      }
     }
+
+    // Extract all used names from generated code to optimize export traversal
+    final usedNames = <String>{};
+    final tokenRegex = RegExp(r'\b[a-zA-Z_$][a-zA-Z0-9_$]*\b');
+    for (final part in generatedParts) {
+      usedNames.addAll(tokenRegex.allMatches(part).map((m) => m.group(0)!));
+    }
+
+    log.info('Resolving top-level names for prefixing...');
 
     // Collect top-level classes and enums from imports
     for (final uri in allImports) {
       if (uri.startsWith('dart:')) continue;
       final prefix = _uriToPrefix[uri]!;
       final library = await _getOrLoadLibraryByUri(buildStep, uri);
-      if (library != null) await _collectTopLevelClasses(library, prefix);
+      if (library != null) {
+        final exportedNames = _getAllExportedNames(library);
+        for (final name in exportedNames) {
+          if (usedNames.contains(name)) {
+            _classToPrefix[name] = prefix;
+          }
+        }
+      }
     }
 
     // Replace class names with their respective prefixes
@@ -125,13 +153,15 @@ class AggregatingArgsBuilder implements Builder {
         })
         .toList();
 
+    final importsBlock = usedImports.join('\n');
+
     // Generate final output file
     final output =
         '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, unused_import
 
-${usedImports.join('\n')}
+$importsBlock
 
 $body
 ''';
@@ -152,26 +182,32 @@ $body
     return content.contains(annotationName);
   }
 
-  /// Collects all top-level classes and enums from the library and its exports.
-  Future<void> _collectTopLevelClasses(
-    LibraryElement library,
-    String prefix, [
-    Set<LibraryElement>? visited,
-  ]) async {
-    visited ??= {};
-    if (!visited.add(library)) return;
+  /// Recursively retrieves all exported names from a library with caching.
+  Set<String> _getAllExportedNames(LibraryElement lib) {
+    if (_libraryExportsCache.containsKey(lib)) {
+      return _libraryExportsCache[lib]!;
+    }
 
-    for (final el in library.topLevelElements) {
+    final names = <String>{};
+    _libraryExportsCache[lib] = names; // Initialize with empty to handle cycles
+
+    for (final el in lib.topLevelElements) {
       if (el is ClassElement || el is EnumElement) {
-        _classToPrefix[el.name!] = prefix;
+        final name = el.name;
+        if (name != null && name.isNotEmpty) {
+          names.add(name);
+        }
       }
     }
 
-    for (final exported in library.exportedLibraries) {
-      if (!exported.source.uri.toString().startsWith('dart:')) {
-        await _collectTopLevelClasses(exported, prefix, visited);
+    for (final exported in lib.exportedLibraries) {
+      final uri = exported.source.uri.toString();
+      if (!uri.startsWith('dart:')) {
+        names.addAll(_getAllExportedNames(exported));
       }
     }
+
+    return names;
   }
 
   /// Loads a [LibraryElement] from a file with caching.
