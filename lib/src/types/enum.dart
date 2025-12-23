@@ -46,15 +46,15 @@ class TypeHelperEnum extends TypeHelper {
   @override
   String decode(ParameterElement field, String? defaultValue) {
     final key = field.name.convertToKebabCase();
-    final enumName = field.type.getDisplayString();
+    final enumName = field.type.getDisplayString(withNullability: true);
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     final valuesExpr =
         '${clear(enumName)}.values.where((e) => e.toString().split(\'.\').last == args[\'$key\'])';
 
     final valueExpr = isNullable
         ? (defaultValue != null
-              ? '$valuesExpr.firstOrNull ?? $defaultValue'
-              : '$valuesExpr.firstOrNull')
+            ? '$valuesExpr.firstOrNull ?? $defaultValue'
+            : '$valuesExpr.firstOrNull')
         : '$valuesExpr.first';
     final fallbackExpr = isNullable
         ? (defaultValue ?? 'null')

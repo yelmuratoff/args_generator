@@ -89,7 +89,7 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
       for (final helper in TypeHelper.values) {
         if (helper.matchesType(param.type)) {
           fieldDeclarations.add(
-            'final ${param.type.getDisplayString()} ${param.name};',
+            'final ${param.type.getDisplayString(withNullability: true)} ${param.name};',
           );
         }
       }
@@ -119,17 +119,15 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
         .map((field) => field.type.element as EnumElement)
         .toSet();
 
-    final enumMapDeclarations = uniqueEnumFields
-        .map((enumElement) {
-          final enumType = enumElement.name;
-          final enumValues = enumElement.fields
-              .where((e) => e.isEnumConstant)
-              .map((e) => "  $enumType.${e.name}: '${e.name}'")
-              .join(',\n');
+    final enumMapDeclarations = uniqueEnumFields.map((enumElement) {
+      final enumType = enumElement.name;
+      final enumValues = enumElement.fields
+          .where((e) => e.isEnumConstant)
+          .map((e) => "  $enumType.${e.name}: '${e.name}'")
+          .join(',\n');
 
-          return 'static const _\$${enumType}EnumMap = {\n$enumValues\n};';
-        })
-        .join('\n\n');
+      return 'static const _\$${enumType}EnumMap = {\n$enumValues\n};';
+    }).join('\n\n');
 
     final wrapper = hasRouteWrapper ? '.wrappedRoute(context)' : '';
 
