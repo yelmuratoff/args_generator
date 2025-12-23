@@ -63,7 +63,7 @@ This generates the aggregated output file (default: `lib/args/router.args.g.dart
 To override:
 
 ```bash
-dart run args_generator --output lib/generator/router.args.g.dart
+dart run args_generator --output lib/generator/router.args.g.dart --clean --fail-on-error
 ```
 
 By default it analyzes `lib/`. You can specify paths:
