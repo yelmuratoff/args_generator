@@ -90,7 +90,9 @@ class ArgsGeneratorCliRunner {
     initStopwatch.stop();
 
     if (verbose) {
-      stdout.writeln('  Context initialized in ${initStopwatch.elapsedMilliseconds}ms');
+      stdout.writeln(
+        '  Context initialized in ${initStopwatch.elapsedMilliseconds}ms',
+      );
     }
 
     final outputAbsPath = _toAbsolute(projectRoot, outputPath);
@@ -151,14 +153,16 @@ class ArgsGeneratorCliRunner {
       for (var i = 0; i < candidateFiles.length; i += _maxConcurrency) {
         final batch = candidateFiles.skip(i).take(_maxConcurrency);
         final batchResults = await Future.wait(
-          batch.map((filePath) => _processFile(
-            session: session,
-            filePath: filePath,
-            emitter: emitter,
-            checker: checker,
-            projectRoot: projectRoot,
-            verbose: verbose,
-          )),
+          batch.map(
+            (filePath) => _processFile(
+              session: session,
+              filePath: filePath,
+              emitter: emitter,
+              checker: checker,
+              projectRoot: projectRoot,
+              verbose: verbose,
+            ),
+          ),
         );
 
         for (final result in batchResults) {
@@ -183,7 +187,9 @@ class ArgsGeneratorCliRunner {
     analysisStopwatch.stop();
 
     if (verbose) {
-      stdout.writeln('  Scanned $totalFiles files, found $candidateCount candidates in ${analysisStopwatch.elapsedMilliseconds}ms');
+      stdout.writeln(
+        '  Scanned $totalFiles files, found $candidateCount candidates in ${analysisStopwatch.elapsedMilliseconds}ms',
+      );
     }
 
     if (generatedParts.isEmpty) {
@@ -312,7 +318,9 @@ class ArgsGeneratorCliRunner {
     codegenStopwatch.stop();
 
     if (verbose) {
-      stdout.writeln('  Code generation completed in ${codegenStopwatch.elapsedMilliseconds}ms');
+      stdout.writeln(
+        '  Code generation completed in ${codegenStopwatch.elapsedMilliseconds}ms',
+      );
       stdout.writeln('Writing output to: $outputPath');
     }
 
@@ -424,26 +432,44 @@ Future<_FileProcessResult?> _processFile({
       return null;
     }
 
-    final isPartOf = parsed.unit.directives.any(
-      (d) => d is PartOfDirective,
-    );
+    final isPartOf = parsed.unit.directives.any((d) => d is PartOfDirective);
     if (isPartOf) {
       return null;
     }
 
-    final resolved = await session.getResolvedLibrary(filePath);
-    if (resolved is! ResolvedLibraryResult) {
-      return null;
-    }
-
-    final libraryReader = LibraryReader(resolved.element);
-    final annotated = libraryReader.annotatedWith(checker).toList();
-    if (annotated.isEmpty) {
+    // Early exit: check AST for @GenerateArgs annotation before expensive resolution
+    final hasAnnotationInAst = parsed.unit.declarations.any((decl) {
+      if (decl is! ClassDeclaration) return false;
+      return decl.metadata.any((annotation) {
+        final name = annotation.name.name;
+        return name == 'GenerateArgs';
+      });
+    });
+    if (!hasAnnotationInAst) {
       return null;
     }
 
     if (verbose) {
       stdout.writeln('Processing: ${_prettyPath(projectRoot, filePath)}');
+    }
+
+    final resolveStopwatch = Stopwatch()..start();
+    // Use getResolvedUnit instead of getResolvedLibrary - faster for single file
+    final resolved = await session.getResolvedUnit(filePath);
+    resolveStopwatch.stop();
+    if (verbose) {
+      stdout.writeln('  Resolved in ${resolveStopwatch.elapsedMilliseconds}ms');
+    }
+
+    if (resolved is! ResolvedUnitResult) {
+      return null;
+    }
+
+    final libraryElement = resolved.libraryElement;
+    final libraryReader = LibraryReader(libraryElement);
+    final annotated = libraryReader.annotatedWith(checker).toList();
+    if (annotated.isEmpty) {
+      return null;
     }
 
     final generatedCode = <String>[];
@@ -461,16 +487,16 @@ Future<_FileProcessResult?> _processFile({
       }
     }
 
-    final uriStr = resolved.element.source.uri.toString();
+    final uriStr = libraryElement.source.uri.toString();
     String? annotatedUri;
 
     if (!uriStr.startsWith('dart:')) {
       annotatedUri = uriStr;
       imports.add(uriStr);
-      librariesByUri[uriStr] = resolved.element;
+      librariesByUri[uriStr] = libraryElement;
     }
 
-    for (final imp in resolved.element.importedLibraries) {
+    for (final imp in libraryElement.importedLibraries) {
       final impUri = imp.source.uri.toString();
       if (!impUri.startsWith('dart:')) {
         imports.add(impUri);
