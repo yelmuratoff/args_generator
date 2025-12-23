@@ -8,6 +8,7 @@ import 'dart:collection';
 
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
@@ -15,6 +16,28 @@ import 'package:args_generator/src/generator.dart';
 import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
+
+/// Cached regex patterns for performance.
+final RegExp _tokenRegex = RegExp(r'\b[a-zA-Z_$][a-zA-Z0-9_$]*\b');
+final RegExp _importPattern = RegExp(r"import '(.*)' as (\S+);");
+
+/// Maximum number of files to process in parallel.
+const int _maxConcurrency = 4;
+
+/// Result of processing a single file.
+class _FileProcessResult {
+  const _FileProcessResult({
+    required this.generatedCode,
+    required this.annotatedUri,
+    required this.imports,
+    required this.librariesByUri,
+  });
+
+  final List<String> generatedCode;
+  final String? annotatedUri;
+  final Set<String> imports;
+  final Map<String, LibraryElement> librariesByUri;
+}
 
 class ArgsGeneratorRunSummary {
   const ArgsGeneratorRunSummary({
@@ -86,73 +109,44 @@ class ArgsGeneratorCliRunner {
           .where((p) => !_isDefinitelyGenerated(p))
           .toList(growable: false);
 
-      for (final filePath in analyzedFiles) {
-        // Fast prefilter to avoid resolving every file.
-        final content = File(filePath).readAsStringSync();
-        if (!content.contains('GenerateArgs')) {
-          continue;
+      // Pre-filter files that might contain annotation (async reads).
+      final candidateFiles = <String>[];
+      final readFutures = analyzedFiles.map((filePath) async {
+        final content = await File(filePath).readAsString();
+        if (content.contains('GenerateArgs')) {
+          return filePath;
         }
+        return null;
+      }).toList();
 
-        final parsed = session.getParsedUnit(filePath);
-        if (parsed is! ParsedUnitResult) {
-          continue;
-        }
+      final readResults = await Future.wait(readFutures);
+      for (final path in readResults) {
+        if (path != null) candidateFiles.add(path);
+      }
 
-        final isPartOf = parsed.unit.directives.any(
-          (d) => d is PartOfDirective,
+      // Process files in parallel batches.
+      for (var i = 0; i < candidateFiles.length; i += _maxConcurrency) {
+        final batch = candidateFiles.skip(i).take(_maxConcurrency);
+        final batchResults = await Future.wait(
+          batch.map((filePath) => _processFile(
+            session: session,
+            filePath: filePath,
+            emitter: emitter,
+            checker: checker,
+            projectRoot: projectRoot,
+            verbose: verbose,
+          )),
         );
-        if (isPartOf) {
-          continue;
-        }
 
-        final resolved = await session.getResolvedLibrary(filePath);
-        if (resolved is! ResolvedLibraryResult) {
-          continue;
-        }
+        for (final result in batchResults) {
+          if (result == null) continue;
 
-        final libraryReader = LibraryReader(resolved.element);
-        final annotated = libraryReader.annotatedWith(checker).toList();
-        if (annotated.isEmpty) {
-          continue;
-        }
-
-        if (verbose) {
-          stdout.writeln('Processing: ${_prettyPath(projectRoot, filePath)}');
-        }
-
-        try {
-          for (final item in annotated) {
-            final element = item.element;
-            if (element is! ClassElement) {
-              continue;
-            }
-            final code = emitter.generateForClass(element);
-            if (code.trim().isNotEmpty) {
-              generatedParts.add(code);
-            }
+          generatedParts.addAll(result.generatedCode);
+          if (result.annotatedUri != null) {
+            annotatedUris.add(result.annotatedUri!);
           }
-
-          final uriStr = resolved.element.source.uri.toString();
-          annotatedUris.add(uriStr);
-
-          if (!uriStr.startsWith('dart:')) {
-            allImports.add(uriStr);
-            librariesByUri[uriStr] = resolved.element;
-          }
-
-          for (final imp in resolved.element.importedLibraries) {
-            final impUri = imp.source.uri.toString();
-            if (!impUri.startsWith('dart:')) {
-              allImports.add(impUri);
-              librariesByUri[impUri] = imp;
-            }
-          }
-        } catch (e) {
-          errors++;
-          stderr.writeln(
-            'args_generator: error while collecting for '
-            '${_prettyPath(projectRoot, filePath)}: $e',
-          );
+          allImports.addAll(result.imports);
+          librariesByUri.addAll(result.librariesByUri);
         }
       }
     }
@@ -197,9 +191,8 @@ class ArgsGeneratorCliRunner {
 
     // Extract all used names from generated code to optimize export traversal
     final usedNames = <String>{};
-    final tokenRegex = RegExp(r'\b[a-zA-Z_$][a-zA-Z0-9_$]*\b');
     for (final part in generatedParts) {
-      usedNames.addAll(tokenRegex.allMatches(part).map((m) => m.group(0)!));
+      usedNames.addAll(_tokenRegex.allMatches(part).map((m) => m.group(0)!));
     }
 
     if (verbose) {
@@ -225,14 +218,15 @@ class ArgsGeneratorCliRunner {
       }
     }
 
-    // Replace class names with their respective prefixes.
+    // Replace class names with their respective prefixes (single pass).
     var body = generatedParts.join('\n\n');
-    classToPrefix.forEach((name, prefix) {
+    if (classToPrefix.isNotEmpty) {
+      final pattern = RegExp(r'\b(' + classToPrefix.keys.join('|') + r')\b');
       body = body.replaceAllMapped(
-        RegExp('\\b$name\\b'),
-        (_) => '$prefix.$name',
+        pattern,
+        (m) => '${classToPrefix[m.group(1)!]!}.${m.group(1)!}',
       );
-    });
+    }
 
     final imports = allImports
         .map((uri) {
@@ -240,7 +234,7 @@ class ArgsGeneratorCliRunner {
           return "import '$uri' as $prefix;";
         })
         .where((line) {
-          final match = RegExp("import '(.*)' as (\\S+);").firstMatch(line);
+          final match = _importPattern.firstMatch(line);
           if (match == null) return false;
           final importUri = match.group(1)!;
           final importPrefix = match.group(2)!;
@@ -365,4 +359,80 @@ Set<String> _getAllExportedNames(
   }
 
   return names;
+}
+
+/// Processes a single file and returns the result or null if skipped.
+Future<_FileProcessResult?> _processFile({
+  required AnalysisSession session,
+  required String filePath,
+  required PageArgsEmitter emitter,
+  required TypeChecker checker,
+  required Directory projectRoot,
+  required bool verbose,
+}) async {
+  final parsed = session.getParsedUnit(filePath);
+  if (parsed is! ParsedUnitResult) {
+    return null;
+  }
+
+  final isPartOf = parsed.unit.directives.any(
+    (d) => d is PartOfDirective,
+  );
+  if (isPartOf) {
+    return null;
+  }
+
+  final resolved = await session.getResolvedLibrary(filePath);
+  if (resolved is! ResolvedLibraryResult) {
+    return null;
+  }
+
+  final libraryReader = LibraryReader(resolved.element);
+  final annotated = libraryReader.annotatedWith(checker).toList();
+  if (annotated.isEmpty) {
+    return null;
+  }
+
+  if (verbose) {
+    stdout.writeln('Processing: ${_prettyPath(projectRoot, filePath)}');
+  }
+
+  final generatedCode = <String>[];
+  final imports = <String>{};
+  final librariesByUri = <String, LibraryElement>{};
+
+  for (final item in annotated) {
+    final element = item.element;
+    if (element is! ClassElement) {
+      continue;
+    }
+    final code = emitter.generateForClass(element);
+    if (code.trim().isNotEmpty) {
+      generatedCode.add(code);
+    }
+  }
+
+  final uriStr = resolved.element.source.uri.toString();
+  String? annotatedUri;
+
+  if (!uriStr.startsWith('dart:')) {
+    annotatedUri = uriStr;
+    imports.add(uriStr);
+    librariesByUri[uriStr] = resolved.element;
+  }
+
+  for (final imp in resolved.element.importedLibraries) {
+    final impUri = imp.source.uri.toString();
+    if (!impUri.startsWith('dart:')) {
+      imports.add(impUri);
+      librariesByUri[impUri] = imp;
+    }
+  }
+
+  return _FileProcessResult(
+    generatedCode: generatedCode,
+    annotatedUri: annotatedUri,
+    imports: imports,
+    librariesByUri: librariesByUri,
+  );
 }

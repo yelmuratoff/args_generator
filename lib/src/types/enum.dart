@@ -14,6 +14,9 @@ const String enumExtensionHelperName = r'_$fromName';
 /// A string representing the name of the enum map.
 String enumMapName(InterfaceType type) => '_\$${type.element3.name3}EnumMap';
 
+/// Cached regex pattern for clearing non-word characters.
+final RegExp _clearPattern = RegExp(r'[\s\d\W]+');
+
 /// A [TypeHelper] implementation for handling enum fields.
 ///
 /// This class provides logic for decoding enums from a map of arguments and
@@ -87,6 +90,6 @@ class TypeHelperEnum extends TypeHelper {
   /// Returns:
   /// The cleaned string with unnecessary characters removed.
   String clear(String text) {
-    return text.replaceAll(RegExp(r'[\s\d\W]+'), '');
+    return text.replaceAll(_clearPattern, '');
   }
 }

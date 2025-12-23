@@ -52,13 +52,13 @@ abstract class TypeHelper {
 
   /// Provides a list of all available type helpers.
   ///
-  /// This static getter returns instances of all implemented type helpers,
+  /// This static list contains instances of all implemented type helpers,
   /// each capable of handling specific Dart types such as `int`, `String`,
   /// `DateTime`, and others.
   ///
   /// Returns:
   /// A list of [TypeHelper] instances.
-  static List<TypeHelper> get values => <TypeHelper>[
+  static final List<TypeHelper> values = <TypeHelper>[
     TypeHelperBigInt(),
     TypeHelperBool(),
     TypeHelperDateTime(),

@@ -12,6 +12,10 @@ import 'package:source_gen/source_gen.dart';
 
 import 'package:args_generator/args_generator.dart';
 
+/// Cached regex patterns for performance.
+final RegExp _tokenRegex = RegExp(r'\b[a-zA-Z_$][a-zA-Z0-9_$]*\b');
+final RegExp _importPattern = RegExp(r"import '(.*)' as (\S+);");
+
 /// A `Builder` that aggregates all classes annotated with `@GenerateArgs`
 /// and generates argument-handling code for them.
 class AggregatingArgsBuilder implements Builder {
@@ -106,9 +110,8 @@ class AggregatingArgsBuilder implements Builder {
 
     // Extract all used names from generated code to optimize export traversal
     final usedNames = <String>{};
-    final tokenRegex = RegExp(r'\b[a-zA-Z_$][a-zA-Z0-9_$]*\b');
     for (final part in generatedParts) {
-      usedNames.addAll(tokenRegex.allMatches(part).map((m) => m.group(0)!));
+      usedNames.addAll(_tokenRegex.allMatches(part).map((m) => m.group(0)!));
     }
 
     log.info('Resolving top-level names for prefixing...');
@@ -128,14 +131,15 @@ class AggregatingArgsBuilder implements Builder {
       }
     }
 
-    // Replace class names with their respective prefixes
+    // Replace class names with their respective prefixes (single pass)
     var body = generatedParts.join('\n\n');
-    _classToPrefix.forEach((name, prefix) {
+    if (_classToPrefix.isNotEmpty) {
+      final pattern = RegExp(r'\b(' + _classToPrefix.keys.join('|') + r')\b');
       body = body.replaceAllMapped(
-        RegExp('\\b$name\\b'),
-        (_) => '$prefix.$name',
+        pattern,
+        (m) => '${_classToPrefix[m.group(1)!]!}.${m.group(1)!}',
       );
-    });
+    }
 
     // Filter only necessary imports
     final usedImports = allImports
@@ -144,7 +148,7 @@ class AggregatingArgsBuilder implements Builder {
           return "import '$uri' as $prefix;";
         })
         .where((line) {
-          final match = RegExp("import '(.*)' as (\\S+);").firstMatch(line);
+          final match = _importPattern.firstMatch(line);
           if (match == null) return false;
           final importUri = match.group(1)!;
           final importPrefix = match.group(2)!;
