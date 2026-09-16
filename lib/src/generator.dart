@@ -6,9 +6,12 @@
 import 'dart:async';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:build/build.dart';
 import 'package:args_generator/src/types/type_helper.dart';
+import 'package:args_generator/src/utils/helpers.dart';
+import 'package:collection/collection.dart';
 import 'package:source_gen/source_gen.dart';
 
 /// Creates a [Builder] for the `args_generator`.
@@ -64,12 +67,16 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
 class PageArgsEmitter {
   const PageArgsEmitter();
 
+  /// The name of the class generated for [classElement].
+  static String argsClassNameOf(ClassElement classElement) =>
+      '${classElement.name}Args';
+
   String generateForClass(ClassElement classElement) {
     final className = classElement.name;
     final hasRouteWrapper = classElement.methods.any((interface) {
       return interface.name == 'wrappedRoute';
     });
-    final argsClassName = '${className}Args';
+    final argsClassName = argsClassNameOf(classElement);
 
     ConstructorElement? unnamedConstructor;
     for (final constructor in classElement.constructors) {
@@ -137,6 +144,19 @@ class PageArgsEmitter {
       }
     }
 
+    final argSpecs = <String>[];
+    for (final param in parameters) {
+      final argSpec = _argSpec(
+        name: param.name,
+        type: param.type,
+        isRequired: param.isRequired,
+        defaultValue: param.defaultValueCode,
+      );
+      if (argSpec != null) {
+        argSpecs.add('$argSpec,');
+      }
+    }
+
     final uniqueEnumFields = fields
         .where((field) => field.type.element3 is EnumElement2)
         .map((field) => field.type.element3 as EnumElement2)
@@ -156,7 +176,7 @@ class PageArgsEmitter {
     final wrapper = hasRouteWrapper ? '.wrappedRoute(context)' : '';
 
     return '''
-class $argsClassName {
+class $argsClassName implements PageArgs {
   const $argsClassName({
     ${constructorParams.join(',\n    ')},
   });
@@ -193,9 +213,22 @@ class $argsClassName {
   }
 
   /// Converts the fields of this class into a [Map] of arguments.
+  @override
   Map<String, String> toArguments() => {
         ${toArgumentsBody.join(',\n        ')}
       };
+
+  /// Describes every argument [tryParse] reads.
+  static const List<PageArgSpec> argSpecs = [
+    ${argSpecs.join('\n    ')}
+  ];
+
+  /// Binds [tryParse], [builder] and [argSpecs] for routers and tools.
+  static const schema = PageArgsSchema<$argsClassName, BuildContext, Widget>(
+    tryParse: tryParse,
+    builder: builder,
+    argSpecs: argSpecs,
+  );
 
   $enumMapDeclarations
 }
@@ -209,6 +242,33 @@ class $argsClassName {
       }
     }
     return null;
+  }
+
+  String? _argSpec({
+    required String name,
+    required DartType type,
+    required bool isRequired,
+    required String? defaultValue,
+  }) {
+    final kind = TypeHelper.values
+        .firstWhereOrNull((helper) => helper.matchesType(type))
+        ?.kind;
+    if (kind == null) return null;
+
+    final needsValue =
+        isRequired &&
+        !type.isNullableType &&
+        defaultValue == null &&
+        kind != PageArgKind.flag;
+    final arguments = [
+      "'${name.convertToKebabCase()}'",
+      'PageArgKind.${kind.name}',
+      if (needsValue) 'isRequired: true',
+      if (defaultValue != null) 'defaultValue: $defaultValue',
+      if (kind == PageArgKind.choice && type is InterfaceType)
+        'options: ${type.element3.name3}.values',
+    ];
+    return 'PageArgSpec(${arguments.join(', ')})';
   }
 
   String? _encodeField(ArgField field) {

@@ -1,3 +1,7 @@
+## 1.3.0
+
+- Added `PageArgs`, `PageArgsSchema`, `PageArgSpec` and `PageArgKind`, the runtime types behind the generated `argSpecs` and `schema`.
+
 ## 1.1.1
 
 - Enhance null and empty checks for Iterable and String type helpers

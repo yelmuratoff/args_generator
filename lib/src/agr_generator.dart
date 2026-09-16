@@ -38,6 +38,7 @@ class AggregatingArgsBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final List<String> generatedParts = [];
+    final Set<String> generatedClassNames = {};
     final typeChecker = TypeChecker.fromUrl(
       'package:args_generator_annotations/args_annotations.dart#GenerateArgs',
     );
@@ -70,7 +71,12 @@ class AggregatingArgsBuilder implements Builder {
                 ConstantReader(constValue),
                 buildStep,
               );
-              if (code.isNotEmpty) generatedParts.add(code);
+              if (code.isNotEmpty) {
+                generatedParts.add(code);
+                generatedClassNames.add(
+                  PageArgsEmitter.argsClassNameOf(classEl),
+                );
+              }
             } catch (e, st) {
               log.severe('Generation error for ${classEl.name}: $e\n$st');
             }
@@ -124,7 +130,7 @@ class AggregatingArgsBuilder implements Builder {
       if (library != null) {
         final exportedNames = _getAllExportedNames(library);
         for (final name in exportedNames) {
-          if (usedNames.contains(name)) {
+          if (usedNames.contains(name) && !generatedClassNames.contains(name)) {
             _classToPrefix[name] = prefix;
           }
         }

@@ -1,5 +1,6 @@
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:args_generator/src/utils/helpers.dart';
 import 'package:args_generator/src/types/type_helper.dart';
 
@@ -22,6 +23,9 @@ final RegExp _clearPattern = RegExp(r'[\s\d\W]+');
 /// This class provides logic for decoding enums from a map of arguments and
 /// encoding enums back into a map format, using the enum's string representation.
 class TypeHelperEnum extends TypeHelper {
+  @override
+  PageArgKind get kind => PageArgKind.choice;
+
   /// Determines if the given [type] is an enum.
   ///
   /// - [type]: The [DartType] to check.
