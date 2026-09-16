@@ -20,10 +20,9 @@ void main() {
     late String page;
 
     setUpAll(() async {
-      final output = File(
-        '${Directory.systemTemp.createTempSync('arg_specs').path}'
-        '/router.args.g.dart',
-      );
+      final outputDirectory = Directory.systemTemp.createTempSync('arg_specs');
+      addTearDown(() => outputDirectory.deleteSync(recursive: true));
+      final output = File('${outputDirectory.path}/router.args.g.dart');
 
       final summary = await ArgsGeneratorCliRunner().run(
         projectRoot: Directory.current,
