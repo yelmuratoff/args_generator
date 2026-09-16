@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/element/type.dart';
+import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:args_generator/src/types/big_int.dart';
 import 'package:args_generator/src/types/bool.dart';
 import 'package:args_generator/src/types/date_time.dart';
@@ -25,6 +26,9 @@ export 'uri.dart';
 /// Type helpers are responsible for matching specific Dart types and providing
 /// logic for decoding and encoding field values of those types.
 abstract class TypeHelper {
+  /// How values of the handled type are written in route arguments.
+  PageArgKind get kind;
+
   /// Checks whether this helper can handle the given [type].
   ///
   /// - [type]: The [DartType] to check.

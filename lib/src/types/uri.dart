@@ -1,5 +1,6 @@
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:args_generator/src/types/type_helper.dart';
 import 'package:args_generator/src/utils/helpers.dart';
 
@@ -8,6 +9,9 @@ import 'package:args_generator/src/utils/helpers.dart';
 /// This class provides the logic for decoding `Uri` values from a map
 /// of arguments and encoding `Uri` fields back into a map format.
 class TypeHelperUri extends TypeHelper {
+  @override
+  PageArgKind get kind => PageArgKind.uri;
+
   /// Determines if the given [type] matches the `Uri` type.
   ///
   /// - [type]: The [DartType] to check.

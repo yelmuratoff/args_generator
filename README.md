@@ -177,7 +177,7 @@ dart run build_runner build --delete-conflicting-outputs
 The following class will be generated:
 
 ```dart
-class TestPageArgs {
+class TestPageArgs implements PageArgs {
   const TestPageArgs({
     required this.bigIntValue,
     required this.boolValue,
@@ -207,6 +207,53 @@ class TestPageArgs {
       };
 }
 ```
+
+### Argument specs and schema
+
+Every generated class also implements `PageArgs` and carries two constants:
+
+```dart
+class TestPageArgs implements PageArgs {
+  // ...
+
+  static const List<PageArgSpec> argSpecs = [
+    PageArgSpec('int-value', PageArgKind.integer, isRequired: true),
+    PageArgSpec('default-bool', PageArgKind.flag, defaultValue: false),
+    PageArgSpec('type-value', PageArgKind.choice, isRequired: true, options: TestEnum.values),
+    // ...
+  ];
+
+  static const schema = PageArgsSchema<TestPageArgs, BuildContext, Widget>(
+    tryParse: tryParse,
+    builder: builder,
+    argSpecs: argSpecs,
+  );
+}
+```
+
+- `argSpecs` lists the key, kind, requirement, default and enum values of every argument, so a tool can build or validate route arguments without repeating them.
+- `schema` lets a router declare the arguments a route takes. With an enum whose type parameter is inferred from the schema, passing the wrong `*Args` class fails to compile:
+
+```dart
+enum Routes<A extends PageArgs> {
+  test('test', args: TestPageArgs.schema),
+  settings('settings');
+
+  const Routes(this.name, {this.args});
+
+  final String name;
+  final PageArgsSchema<A, BuildContext, Widget>? args;
+}
+
+extension RouteArgumentsX<A extends PageArgs> on Routes<A> {
+  Map<String, String> argumentsOf(A args) => args.toArguments();
+}
+
+Routes.test.argumentsOf(TestPageArgs(/* ... */)); // OK
+Routes.test.argumentsOf(SecondPageArgs(/* ... */)); // compile-time error
+```
+
+Keep such helpers as extension methods on the route: a top-level `push<A>(Routes<A> route, A args)` infers `A` from both arguments and accepts any `PageArgs`.
 
 ## Aggregated Builder
 
