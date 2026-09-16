@@ -28,6 +28,7 @@ const int _maxConcurrency = 4;
 class _FileProcessResult {
   const _FileProcessResult({
     required this.generatedCode,
+    required this.generatedClassNames,
     required this.annotatedUri,
     required this.imports,
     required this.librariesByUri,
@@ -35,6 +36,7 @@ class _FileProcessResult {
   });
 
   final List<String> generatedCode;
+  final Set<String> generatedClassNames;
   final String? annotatedUri;
   final Set<String> imports;
   final Map<String, LibraryElement> librariesByUri;
@@ -107,6 +109,7 @@ class ArgsGeneratorCliRunner {
     final checker = TypeChecker.fromRuntime(GenerateArgs);
 
     final generatedParts = <String>[];
+    final generatedClassNames = <String>{};
     final allImports = SplayTreeSet<String>();
     final librariesByUri = <String, LibraryElement>{};
     final annotatedUris = <String>{};
@@ -175,6 +178,7 @@ class ArgsGeneratorCliRunner {
           }
 
           generatedParts.addAll(result.generatedCode);
+          generatedClassNames.addAll(result.generatedClassNames);
           if (result.annotatedUri != null) {
             annotatedUris.add(result.annotatedUri!);
           }
@@ -257,7 +261,7 @@ class ArgsGeneratorCliRunner {
 
       final exportedNames = _getAllExportedNames(library, libraryExportsCache);
       for (final name in exportedNames) {
-        if (usedNames.contains(name)) {
+        if (usedNames.contains(name) && !generatedClassNames.contains(name)) {
           classToPrefix[name] = prefix;
         }
       }
@@ -473,6 +477,7 @@ Future<_FileProcessResult?> _processFile({
     }
 
     final generatedCode = <String>[];
+    final generatedClassNames = <String>{};
     final imports = <String>{};
     final librariesByUri = <String, LibraryElement>{};
 
@@ -484,6 +489,7 @@ Future<_FileProcessResult?> _processFile({
       final code = emitter.generateForClass(element);
       if (code.trim().isNotEmpty) {
         generatedCode.add(code);
+        generatedClassNames.add(PageArgsEmitter.argsClassNameOf(element));
       }
     }
 
@@ -506,6 +512,7 @@ Future<_FileProcessResult?> _processFile({
 
     return _FileProcessResult(
       generatedCode: generatedCode,
+      generatedClassNames: generatedClassNames,
       annotatedUri: annotatedUri,
       imports: imports,
       librariesByUri: librariesByUri,
@@ -514,6 +521,7 @@ Future<_FileProcessResult?> _processFile({
     final prettyPath = _prettyPath(projectRoot, filePath);
     return _FileProcessResult(
       generatedCode: const [],
+      generatedClassNames: const {},
       annotatedUri: null,
       imports: const {},
       librariesByUri: const {},
