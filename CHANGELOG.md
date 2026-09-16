@@ -1,3 +1,11 @@
+## 1.3.0
+
+- Generated `*Args` classes implement `PageArgs` and expose `static const argSpecs`: the key, kind, requirement, default and enum values of every argument `tryParse` reads.
+- Generated `*Args` classes expose `static const schema`, a `PageArgsSchema` binding `tryParse`, `builder` and `argSpecs`, so a router can declare which arguments a route takes and type-check navigation against them.
+- `TypeHelper` reports the `PageArgKind` of the type it handles.
+- Fixed generated class names being prefixed (`class _i2.DetailPageArgs`) when a library imported by an annotated page re-exports the generated file.
+- Requires `args_generator_annotations` 1.3.0.
+
 ## 1.2.6
 
 - Added aggregated CLI generation via `dart run args_generator` (no `build_runner` required).
