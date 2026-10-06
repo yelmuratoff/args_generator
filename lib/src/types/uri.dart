@@ -21,9 +21,9 @@ class TypeHelperUri extends TypeHelper {
   @override
   bool matchesType(DartType type) {
     if (type is InterfaceType) {
-      final element = type.element3;
+      final element = type.element;
 
-      return element.name3 == 'Uri';
+      return element.name == 'Uri';
     }
     return false;
   }

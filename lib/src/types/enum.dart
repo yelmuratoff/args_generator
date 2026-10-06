@@ -13,7 +13,8 @@ const String enumExtensionHelperName = r'_$fromName';
 ///
 /// Returns:
 /// A string representing the name of the enum map.
-String enumMapName(InterfaceType type) => '_\$${type.element3.name3}EnumMap';
+String enumMapName(InterfaceType type) =>
+    '_\$${type.element.displayName}EnumMap';
 
 /// Cached regex pattern for clearing non-word characters.
 final RegExp _clearPattern = RegExp(r'[\s\d\W]+');

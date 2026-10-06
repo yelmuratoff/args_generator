@@ -21,9 +21,9 @@ class TypeHelperBigInt extends TypeHelper {
   @override
   bool matchesType(DartType type) {
     if (type is InterfaceType) {
-      final element = type.element3;
+      final element = type.element;
 
-      return element.name3 == 'BigInt';
+      return element.name == 'BigInt';
     }
     return false;
   }

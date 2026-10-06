@@ -21,9 +21,9 @@ class TypeHelperIterable extends TypeHelper {
   @override
   bool matchesType(DartType type) {
     if (type is InterfaceType) {
-      final element = type.element3;
+      final element = type.element;
 
-      return element.name3 == 'List' || element.name3 == 'Iterable';
+      return element.name == 'List' || element.name == 'Iterable';
     }
     return false;
   }

@@ -1,11 +1,5 @@
-// ignore_for_file: deprecated_member_use
-// NOTE: `source_gen` / `build_resolvers` still expose the old analyzer element
-// model in their public APIs. This file must keep using those types until
-// upstream migrates.
-
 import 'dart:async';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:build/build.dart';
@@ -69,24 +63,16 @@ class PageArgsEmitter {
 
   /// The name of the class generated for [classElement].
   static String argsClassNameOf(ClassElement classElement) =>
-      '${classElement.name}Args';
+      '${classElement.displayName}Args';
 
   String generateForClass(ClassElement classElement) {
-    final className = classElement.name;
+    final className = classElement.displayName;
     final hasRouteWrapper = classElement.methods.any((interface) {
       return interface.name == 'wrappedRoute';
     });
     final argsClassName = argsClassNameOf(classElement);
 
-    ConstructorElement? unnamedConstructor;
-    for (final constructor in classElement.constructors) {
-      if (constructor.name.isEmpty) {
-        unnamedConstructor = constructor;
-        break;
-      }
-    }
-
-    final constructor = unnamedConstructor;
+    final constructor = classElement.unnamedConstructor;
     if (constructor == null) {
       throw InvalidGenerationSourceError(
         'The class $className must have an unnamed constructor.',
@@ -97,7 +83,7 @@ class PageArgsEmitter {
     final fields = classElement.fields
         .where((field) => !field.isStatic && field.isFinal)
         .toList();
-    final parameters = constructor.parameters;
+    final parameters = constructor.formalParameters;
 
     final constructorParams = <String>[];
     for (final param in parameters) {
@@ -106,7 +92,7 @@ class PageArgsEmitter {
       for (final helper in TypeHelper.values) {
         if (helper.matchesType(param.type)) {
           constructorParams.add(
-            '${isRequired ? 'required ' : ''}this.${param.name}${defaultValue != null ? ' = $defaultValue' : ''}',
+            '${isRequired ? 'required ' : ''}this.${param.displayName}${defaultValue != null ? ' = $defaultValue' : ''}',
           );
         }
       }
@@ -117,7 +103,7 @@ class PageArgsEmitter {
       for (final helper in TypeHelper.values) {
         if (helper.matchesType(param.type)) {
           fieldDeclarations.add(
-            'final ${param.type.getDisplayString()} ${param.name};',
+            'final ${param.type.getDisplayString()} ${param.displayName};',
           );
         }
       }
@@ -126,18 +112,18 @@ class PageArgsEmitter {
     final tryParseBody = <String>[];
     for (final param in parameters) {
       final decodedValue = _decodeField(
-        ArgField(name: param.name, type: param.type),
+        ArgField(name: param.displayName, type: param.type),
         param.defaultValueCode,
       );
       if (decodedValue != null) {
-        tryParseBody.add('${param.name}: $decodedValue');
+        tryParseBody.add('${param.displayName}: $decodedValue');
       }
     }
 
     final toArgumentsBody = <String>[];
     for (final param in parameters) {
       final encodedValue = _encodeField(
-        ArgField(name: param.name, type: param.type),
+        ArgField(name: param.displayName, type: param.type),
       );
       if (encodedValue != null) {
         toArgumentsBody.add(encodedValue);
@@ -147,7 +133,7 @@ class PageArgsEmitter {
     final argSpecs = <String>[];
     for (final param in parameters) {
       final argSpec = _argSpec(
-        name: param.name,
+        name: param.displayName,
         type: param.type,
         isRequired: param.isRequired,
         defaultValue: param.defaultValueCode,
@@ -158,15 +144,15 @@ class PageArgsEmitter {
     }
 
     final uniqueEnumFields = fields
-        .where((field) => field.type.element3 is EnumElement2)
-        .map((field) => field.type.element3 as EnumElement2)
+        .map((field) => field.type.element)
+        .whereType<EnumElement>()
         .toSet();
 
     final enumMapDeclarations = uniqueEnumFields
         .map((enumElement) {
-          final enumType = enumElement.name3;
-          final enumValues = enumElement.constants2
-              .map((e) => "  $enumType.${e.name3}: '${e.name3}'")
+          final enumType = enumElement.displayName;
+          final enumValues = enumElement.constants
+              .map((e) => "  $enumType.${e.displayName}: '${e.displayName}'")
               .join(',\n');
 
           return 'static const _\$${enumType}EnumMap = {\n$enumValues\n};';
@@ -208,7 +194,7 @@ class $argsClassName implements PageArgs {
     }
 
     return $className(
-      ${fields.map((f) => '${f.name}: args.${f.name},').join('\n      ')}
+      ${fields.map((f) => '${f.displayName}: args.${f.displayName},').join('\n      ')}
     )$wrapper;
   }
 
@@ -266,7 +252,7 @@ class $argsClassName implements PageArgs {
       if (needsValue) 'isRequired: true',
       if (defaultValue != null) 'defaultValue: $defaultValue',
       if (kind == PageArgKind.choice && type is InterfaceType)
-        'options: ${type.element3.name3}.values',
+        'options: ${type.element.displayName}.values',
     ];
     return 'PageArgSpec(${arguments.join(', ')})';
   }

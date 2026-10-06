@@ -1,7 +1,3 @@
-// ignore_for_file: deprecated_member_use
-// NOTE: `build_resolvers` currently resolves libraries using the deprecated
-// analyzer element model. This builder can't fully migrate until upstream does.
-
 import 'dart:async';
 import 'dart:collection';
 
@@ -58,9 +54,8 @@ class AggregatingArgsBuilder implements Builder {
       if (library == null) continue;
 
       bool foundAnnotated = false;
-      for (final classEl
-          in library.topLevelElements.whereType<ClassElement>()) {
-        for (final meta in classEl.metadata) {
+      for (final classEl in library.classes) {
+        for (final meta in classEl.metadata.annotations) {
           final constValue = meta.computeConstantValue();
           if (constValue != null &&
               typeChecker.isExactlyType(constValue.type!)) {
@@ -78,7 +73,9 @@ class AggregatingArgsBuilder implements Builder {
                 );
               }
             } catch (e, st) {
-              log.severe('Generation error for ${classEl.name}: $e\n$st');
+              log.severe(
+                'Generation error for ${classEl.displayName}: $e\n$st',
+              );
             }
             break; // Process only the first annotation per class
           }
@@ -86,11 +83,14 @@ class AggregatingArgsBuilder implements Builder {
       }
 
       if (foundAnnotated) {
-        final uriStr = library.source.uri.toString();
+        final uriStr = library.uri.toString();
         _annotatedUris.add(uriStr);
         if (!uriStr.startsWith('dart:')) allImports.add(uriStr);
-        for (final imp in library.importedLibraries) {
-          final impUri = imp.source.uri.toString();
+        final importedLibraries = library.fragments.expand(
+          (fragment) => fragment.importedLibraries,
+        );
+        for (final imp in importedLibraries) {
+          final impUri = imp.uri.toString();
           if (!impUri.startsWith('dart:')) allImports.add(impUri);
         }
       }
@@ -201,17 +201,15 @@ $body
     final names = <String>{};
     _libraryExportsCache[lib] = names; // Initialize with empty to handle cycles
 
-    for (final el in lib.topLevelElements) {
-      if (el is ClassElement || el is EnumElement) {
-        final name = el.name;
-        if (name != null && name.isNotEmpty) {
-          names.add(name);
-        }
+    for (final el in <Element>[...lib.classes, ...lib.enums]) {
+      final name = el.name;
+      if (name != null && name.isNotEmpty) {
+        names.add(name);
       }
     }
 
     for (final exported in lib.exportedLibraries) {
-      final uri = exported.source.uri.toString();
+      final uri = exported.uri.toString();
       if (!uri.startsWith('dart:')) {
         names.addAll(_getAllExportedNames(exported));
       }

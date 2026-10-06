@@ -1,8 +1,3 @@
-// ignore_for_file: deprecated_member_use
-// NOTE: The CLI currently reuses generation logic built on top of the old
-// analyzer element model (via `source_gen`). A full migration requires an
-// Element2-based emitter.
-
 import 'dart:io';
 import 'dart:collection';
 
@@ -106,7 +101,10 @@ class ArgsGeneratorCliRunner {
     var errors = 0;
 
     final emitter = PageArgsEmitter();
-    final checker = TypeChecker.fromRuntime(GenerateArgs);
+    const checker = TypeChecker.typeNamed(
+      GenerateArgs,
+      inPackage: 'args_generator_annotations',
+    );
 
     final generatedParts = <String>[];
     final generatedClassNames = <String>{};
@@ -402,17 +400,15 @@ Set<String> _getAllExportedNames(
   final names = <String>{};
   cache[lib] = names; // Initialize with empty to handle cycles
 
-  for (final el in lib.topLevelElements) {
-    if (el is ClassElement || el is EnumElement) {
-      final name = el.name;
-      if (name != null && name.isNotEmpty) {
-        names.add(name);
-      }
+  for (final el in <Element>[...lib.classes, ...lib.enums]) {
+    final name = el.name;
+    if (name != null && name.isNotEmpty) {
+      names.add(name);
     }
   }
 
   for (final exported in lib.exportedLibraries) {
-    final uri = exported.source.uri.toString();
+    final uri = exported.uri.toString();
     if (!uri.startsWith('dart:')) {
       names.addAll(_getAllExportedNames(exported, cache));
     }
@@ -493,7 +489,7 @@ Future<_FileProcessResult?> _processFile({
       }
     }
 
-    final uriStr = libraryElement.source.uri.toString();
+    final uriStr = libraryElement.uri.toString();
     String? annotatedUri;
 
     if (!uriStr.startsWith('dart:')) {
@@ -502,8 +498,11 @@ Future<_FileProcessResult?> _processFile({
       librariesByUri[uriStr] = libraryElement;
     }
 
-    for (final imp in libraryElement.importedLibraries) {
-      final impUri = imp.source.uri.toString();
+    final importedLibraries = libraryElement.fragments.expand(
+      (fragment) => fragment.importedLibraries,
+    );
+    for (final imp in importedLibraries) {
+      final impUri = imp.uri.toString();
       if (!impUri.startsWith('dart:')) {
         imports.add(impUri);
         librariesByUri[impUri] = imp;
