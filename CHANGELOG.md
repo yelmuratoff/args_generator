@@ -1,3 +1,10 @@
+## 1.4.0
+
+- Requires `analyzer` 14, `build` 4 and `source_gen` 4, so the generator runs alongside current `build_runner`, `freezed` and `drift_dev` on Dart 3.10+ SDKs, where `analyzer` 7 fails on dot-shorthand syntax in the Flutter SDK.
+- Raised the minimum Dart SDK to 3.11. Projects on older SDKs keep resolving 1.3.0.
+- Migrated every builder and the CLI to the analyzer element model and removed the `deprecated_member_use` ignores.
+- Generated `*Args` classes and imports are unchanged; the aggregated file may list the classes in a different order.
+
 ## 1.3.0
 
 - Generated `*Args` classes implement `PageArgs` and expose `static const argSpecs`: the key, kind, requirement, default and enum values of every argument `tryParse` reads.
