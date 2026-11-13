@@ -4,6 +4,10 @@ version: 1.4.0
 homepage: https://github.com/yelmuratoff/args_generator
 repository: https://github.com/yelmuratoff/args_generator
 
+screenshots:
+  - description: "A page annotated with @GenerateArgs() and the typed Args class the generator writes for it."
+    path: assets/screenshots/banner.webp
+
 executables:
   args_generator:
 
