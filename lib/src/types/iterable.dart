@@ -20,18 +20,17 @@ class TypeHelperIterable extends TypeHelper {
   /// `true` if the [type] is assignable to `Iterable`; otherwise, `false`.
   @override
   bool matchesType(DartType type) {
-    if (type is InterfaceType) {
-      final element = type.element;
-
-      return element.name == 'List' || element.name == 'Iterable';
-    }
-    return false;
+    if (type is! InterfaceType) return false;
+    final element = type.element;
+    if (!element.library.isDartCore) return false;
+    if (element.name != 'List' && element.name != 'Iterable') return false;
+    final itemType = type.typeArguments.single;
+    return itemType.isDartCoreString || itemType.isLikeDynamic;
   }
 
   /// Decodes an `Iterable` value from the provided arguments.
   ///
   /// - [field]: The field to decode.
-  /// - [defaultValue]: The default value for the field, if any (not used here).
   ///
   /// The method checks if the field's name (converted to kebab-case) exists in
   /// the `args` map. If it exists, the value is split by commas and converted
@@ -42,11 +41,11 @@ class TypeHelperIterable extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `Iterable` value.
   @override
-  String decode(ArgField field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
-    return "args.containsKey('$key') ? args['$key']!.split(',').map((e) => e).toList() : ${isNullable ? 'null' : '[]'}";
+    return "args.containsKey('$key') ? args['$key']!.split(',') : ${isNullable ? 'null' : '[]'}";
   }
 
   /// Encodes an `Iterable` field into a map format.

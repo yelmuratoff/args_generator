@@ -24,7 +24,6 @@ class TypeHelperInt extends TypeHelper {
   /// Decodes an `int` value from the provided arguments.
   ///
   /// - [field]: The field to decode.
-  /// - [defaultValue]: The default value for the field, if any (not used here).
   ///
   /// This method extracts the value associated with the field's name (converted
   /// to kebab-case) from the `args` map. It then tries to parse the value into
@@ -34,15 +33,13 @@ class TypeHelperInt extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `int` value.
   @override
-  String decode(ArgField field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final arg = "args['$key']";
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
     return isNullable
-        ? (defaultValue != null
-              ? "int.tryParse($arg ?? '$defaultValue')"
-              : "$arg != null ? int.tryParse($arg!) : null")
+        ? "$arg != null ? int.tryParse($arg!) : null"
         : "int.parse($arg.toString())";
   }
 

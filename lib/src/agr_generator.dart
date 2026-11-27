@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
@@ -7,10 +6,7 @@ import 'package:glob/glob.dart';
 import 'package:source_gen/source_gen.dart';
 
 import 'package:args_generator/args_generator.dart';
-
-/// Cached regex patterns for performance.
-final RegExp _tokenRegex = RegExp(r'\b[a-zA-Z_$][a-zA-Z0-9_$]*\b');
-final RegExp _importPattern = RegExp(r"import '(.*)' as (\S+);");
+import 'package:args_generator/src/aggregated_output.dart';
 
 /// A `Builder` that aggregates all classes annotated with `@GenerateArgs`
 /// and generates argument-handling code for them.
@@ -24,230 +20,88 @@ class AggregatingArgsBuilder implements Builder {
     r'$package$': [outputPath],
   };
 
-  final Map<String, String> _uriToPrefix = {};
-  final Map<String, String> _classToPrefix = {};
-  final Set<String> _annotatedUris = {};
-  final Map<String, LibraryElement?> _librariesCache = {};
-  final Map<LibraryElement, Set<String>> _libraryExportsCache = {};
-  int _prefixCounter = 0;
-
   @override
   Future<void> build(BuildStep buildStep) async {
-    final List<String> generatedParts = [];
-    final Set<String> generatedClassNames = {};
-    final typeChecker = TypeChecker.fromUrl(
-      'package:args_generator_annotations/args_annotations.dart#GenerateArgs',
-    );
     final generator = PageArgsGenerator();
-    final SplayTreeSet<String> allImports = SplayTreeSet();
+    final classes = <GeneratedArgsClass>[];
+    final librariesByUri = <String, LibraryElement>{};
+    final annotatedUris = <String>{};
 
     log.info('Starting args_generator analysis...');
 
-    // Process all Dart files, skipping generated files (*.g.dart)
     await for (final input in buildStep.findAssets(Glob('lib/**.dart'))) {
       if (input.path.endsWith('.g.dart')) continue;
-      if (!await _fileContainsAnnotation(buildStep, input, 'GenerateArgs')) {
+      final content = await buildStep.readAsString(input);
+      if (!content.contains('GenerateArgs')) continue;
+
+      final LibraryElement library;
+      final List<GeneratedArgsClass> libraryClasses;
+      try {
+        library = await buildStep.resolver.libraryFor(input);
+        libraryClasses = await _generateLibrary(library, generator, buildStep);
+      } on NonLibraryAssetException {
+        continue;
+      } on InvalidGenerationSourceError catch (e) {
+        log.severe('args_generator: ${input.path}: $e');
+        continue;
+      } on SyntaxErrorInAssetException catch (e) {
+        log.severe('args_generator: ${input.path}: $e');
+        continue;
+      } on UnresolvedAnnotationException catch (e) {
+        log.severe('args_generator: ${input.path}: $e');
         continue;
       }
 
-      final library = await _getOrLoadLibrary(buildStep, input);
-      if (library == null) continue;
-
-      bool foundAnnotated = false;
-      for (final classEl in library.classes) {
-        for (final meta in classEl.metadata.annotations) {
-          final constValue = meta.computeConstantValue();
-          if (constValue != null &&
-              typeChecker.isExactlyType(constValue.type!)) {
-            foundAnnotated = true;
-            try {
-              final code = await generator.generateForAnnotatedElement(
-                classEl,
-                ConstantReader(constValue),
-                buildStep,
-              );
-              if (code.isNotEmpty) {
-                generatedParts.add(code);
-                generatedClassNames.add(
-                  PageArgsEmitter.argsClassNameOf(classEl),
-                );
-              }
-            } catch (e, st) {
-              log.severe(
-                'Generation error for ${classEl.displayName}: $e\n$st',
-              );
-            }
-            break; // Process only the first annotation per class
+      if (libraryClasses.isEmpty) continue;
+      final uri = library.uri.toString();
+      classes.addAll(libraryClasses);
+      annotatedUris.add(uri);
+      librariesByUri[uri] = library;
+      for (final fragment in library.fragments) {
+        for (final imported in fragment.importedLibraries) {
+          if (!imported.uri.isScheme('dart')) {
+            librariesByUri[imported.uri.toString()] = imported;
           }
         }
       }
-
-      if (foundAnnotated) {
-        final uriStr = library.uri.toString();
-        _annotatedUris.add(uriStr);
-        if (!uriStr.startsWith('dart:')) allImports.add(uriStr);
-        final importedLibraries = library.fragments.expand(
-          (fragment) => fragment.importedLibraries,
-        );
-        for (final imp in importedLibraries) {
-          final impUri = imp.uri.toString();
-          if (!impUri.startsWith('dart:')) allImports.add(impUri);
-        }
-      }
     }
 
-    if (generatedParts.isEmpty) {
-      // Clean up if needed, though build_runner handles file deletions usually.
-      return;
-    }
+    if (classes.isEmpty) return;
 
     log.info('Generating code and resolving imports...');
 
-    // Ensure unique prefixes without conflicts
-    for (final uri in allImports) {
-      if (!_uriToPrefix.containsKey(uri)) {
-        String newPrefix;
-        do {
-          newPrefix = '_i${_prefixCounter++}';
-        } while (_uriToPrefix.containsValue(newPrefix));
-        _uriToPrefix[uri] = newPrefix;
-      }
-    }
-
-    // Extract all used names from generated code to optimize export traversal
-    final usedNames = <String>{};
-    for (final part in generatedParts) {
-      usedNames.addAll(_tokenRegex.allMatches(part).map((m) => m.group(0)!));
-    }
-
-    log.info('Resolving top-level names for prefixing...');
-
-    // Collect top-level classes and enums from imports
-    for (final uri in allImports) {
-      if (uri.startsWith('dart:')) continue;
-      final prefix = _uriToPrefix[uri]!;
-      final library = await _getOrLoadLibraryByUri(buildStep, uri);
-      if (library != null) {
-        final exportedNames = _getAllExportedNames(library);
-        for (final name in exportedNames) {
-          if (usedNames.contains(name) && !generatedClassNames.contains(name)) {
-            _classToPrefix[name] = prefix;
-          }
-        }
-      }
-    }
-
-    // Replace class names with their respective prefixes (single pass)
-    var body = generatedParts.join('\n\n');
-    if (_classToPrefix.isNotEmpty) {
-      final pattern = RegExp(r'\b(' + _classToPrefix.keys.join('|') + r')\b');
-      body = body.replaceAllMapped(
-        pattern,
-        (m) => '${_classToPrefix[m.group(1)!]!}.${m.group(1)!}',
-      );
-    }
-
-    // Filter only necessary imports
-    final usedImports = allImports
-        .map((uri) {
-          final prefix = _uriToPrefix[uri]!;
-          return "import '$uri' as $prefix;";
-        })
-        .where((line) {
-          final match = _importPattern.firstMatch(line);
-          if (match == null) return false;
-          final importUri = match.group(1)!;
-          final importPrefix = match.group(2)!;
-          return _annotatedUris.contains(importUri) ||
-              body.contains('$importPrefix.');
-        })
-        .toList();
-
-    final importsBlock = usedImports.join('\n');
-
-    // Generate final output file
-    final output =
-        '''
-// GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: type=lint, unused_import
-
-$importsBlock
-
-$body
-''';
-
     await buildStep.writeAsString(
       AssetId(buildStep.inputId.package, outputPath),
-      output,
+      assembleAggregatedOutput(
+        classes: classes,
+        libraries: librariesByUri,
+        annotatedUris: annotatedUris,
+      ),
     );
   }
+}
 
-  /// Checks if a file likely contains the specified annotation to avoid unnecessary parsing.
-  Future<bool> _fileContainsAnnotation(
-    BuildStep buildStep,
-    AssetId id,
-    String annotationName,
-  ) async {
-    final content = await buildStep.readAsString(id);
-    return content.contains(annotationName);
-  }
-
-  /// Recursively retrieves all exported names from a library with caching.
-  Set<String> _getAllExportedNames(LibraryElement lib) {
-    if (_libraryExportsCache.containsKey(lib)) {
-      return _libraryExportsCache[lib]!;
-    }
-
-    final names = <String>{};
-    _libraryExportsCache[lib] = names; // Initialize with empty to handle cycles
-
-    for (final el in <Element>[...lib.classes, ...lib.enums]) {
-      final name = el.name;
-      if (name != null && name.isNotEmpty) {
-        names.add(name);
-      }
-    }
-
-    for (final exported in lib.exportedLibraries) {
-      final uri = exported.uri.toString();
-      if (!uri.startsWith('dart:')) {
-        names.addAll(_getAllExportedNames(exported));
-      }
-    }
-
-    return names;
-  }
-
-  /// Loads a [LibraryElement] from a file with caching.
-  Future<LibraryElement?> _getOrLoadLibrary(
-    BuildStep buildStep,
-    AssetId input,
-  ) async {
-    final uriStr = input.uri.toString();
-    if (_librariesCache.containsKey(uriStr)) return _librariesCache[uriStr];
-    try {
-      return _librariesCache[uriStr] = await buildStep.resolver.libraryFor(
-        input,
-      );
-    } catch (_) {
-      return _librariesCache[uriStr] = null;
-    }
-  }
-
-  /// Loads a [LibraryElement] by URI with caching.
-  Future<LibraryElement?> _getOrLoadLibraryByUri(
-    BuildStep buildStep,
-    String uriStr,
-  ) async {
-    if (_librariesCache.containsKey(uriStr)) return _librariesCache[uriStr];
-    try {
-      return _librariesCache[uriStr] = await buildStep.resolver.libraryFor(
-        AssetId.resolve(Uri.parse(uriStr)),
-      );
-    } catch (_) {
-      return _librariesCache[uriStr] = null;
-    }
-  }
+Future<List<GeneratedArgsClass>> _generateLibrary(
+  LibraryElement library,
+  PageArgsGenerator generator,
+  BuildStep buildStep,
+) async {
+  final uri = library.uri.toString();
+  return [
+    for (final annotated in LibraryReader(
+      library,
+    ).annotatedWith(generateArgsChecker))
+      if (annotated.element case final ClassElement element)
+        (
+          libraryUri: uri,
+          className: PageArgsEmitter.argsClassNameOf(element),
+          code: await generator.generateForAnnotatedElement(
+            element,
+            annotated.annotation,
+            buildStep,
+          ),
+        ),
+  ];
 }
 
 /// Factory method to create an instance of [AggregatingArgsBuilder].

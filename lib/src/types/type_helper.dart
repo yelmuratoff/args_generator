@@ -10,6 +10,7 @@ import 'package:args_generator/src/types/iterable.dart';
 import 'package:args_generator/src/types/num.dart';
 import 'package:args_generator/src/types/string.dart';
 import 'package:args_generator/src/types/uri.dart';
+import 'package:collection/collection.dart';
 
 export 'big_int.dart';
 export 'bool.dart';
@@ -40,11 +41,11 @@ abstract class TypeHelper {
   /// Decodes a field of the handled type from a given map of arguments.
   ///
   /// - [field]: The field to decode.
-  /// - [defaultValue]: An optional default value to use if the field value is missing.
   ///
   /// Returns:
-  /// A string representing the code for decoding the field value.
-  String decode(ArgField field, String? defaultValue);
+  /// A string representing the code for decoding the field value. The
+  /// emitter substitutes the constructor default when the key is missing.
+  String decode(ArgField field);
 
   /// Encodes a field of the handled type into a map format.
   ///
@@ -74,6 +75,10 @@ abstract class TypeHelper {
     TypeHelperUri(),
     TypeHelperIterable(),
   ];
+
+  /// The helper that handles [type], or `null` when no helper does.
+  static TypeHelper? forType(DartType type) =>
+      values.firstWhereOrNull((helper) => helper.matchesType(type));
 }
 
 /// Minimal field shape used by [TypeHelper] implementations.

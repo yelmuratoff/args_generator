@@ -31,7 +31,6 @@ class TypeHelperBigInt extends TypeHelper {
   /// Decodes a `BigInt` value from the provided arguments.
   ///
   /// - [field]: The field to decode.
-  /// - [defaultValue]: The default value for the field, if any.
   ///
   /// Converts the value in the `args` map (with the field name converted
   /// to kebab-case) into a `BigInt` using `BigInt.tryParse`. If the field is
@@ -40,15 +39,13 @@ class TypeHelperBigInt extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `BigInt` value.
   @override
-  String decode(ArgField field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final arg = "args['$key']";
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
     return isNullable
-        ? (defaultValue != null
-              ? "BigInt.tryParse($arg ?? $defaultValue)"
-              : "$arg != null ? BigInt.tryParse($arg!) : null")
+        ? "$arg != null ? BigInt.tryParse($arg!) : null"
         : "BigInt.parse($arg.toString())";
   }
 

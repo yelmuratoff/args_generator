@@ -38,6 +38,12 @@ Future<void> main(List<String> arguments) async {
       'clean',
       defaultsTo: false,
       help: 'Delete stale *.args.g.dart outputs when no @GenerateArgs remain.',
+    )
+    ..addOption(
+      'sdk-path',
+      help:
+          'Dart SDK to analyze against. Detected from FLUTTER_ROOT or the '
+          'dart on PATH when the CLI runs as a compiled executable.',
     );
 
   late final ArgResults results;
@@ -74,14 +80,21 @@ Future<void> main(List<String> arguments) async {
   final failOnError = results.flag('fail-on-error');
   final clean = results.flag('clean');
 
-  final runner = ArgsGeneratorCliRunner();
-  final summary = await runner.run(
-    projectRoot: projectRoot,
-    includePaths: includePaths,
-    outputPath: outputPath,
-    verbose: verbose,
-    clean: clean,
-  );
+  final ArgsGeneratorRunSummary summary;
+  try {
+    summary = await ArgsGeneratorCliRunner().run(
+      projectRoot: projectRoot,
+      includePaths: includePaths,
+      outputPath: outputPath,
+      verbose: verbose,
+      clean: clean,
+      sdkPath: results.option('sdk-path') ?? detectSdkPath(),
+    );
+  } on ArgsGeneratorException catch (e) {
+    stderr.writeln('args_generator: ${e.message}');
+    exitCode = 64;
+    return;
+  }
 
   if (verbose) {
     stdout.writeln('---');

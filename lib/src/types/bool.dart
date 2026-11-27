@@ -24,7 +24,6 @@ class TypeHelperBool extends TypeHelper {
   /// Decodes a `bool` value from the provided arguments.
   ///
   /// - [field]: The field to decode.
-  /// - [defaultValue]: The default value for the field, if any.
   ///
   /// Checks if the key (derived from the field name converted to kebab-case)
   /// exists in the `args` map. If the key exists, its value is compared to the
@@ -35,7 +34,7 @@ class TypeHelperBool extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `bool` value.
   @override
-  String decode(ArgField field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     return "args.containsKey('$key') ? (args['$key']?.toLowerCase() == 'true') : ${isNullable ? 'null' : 'false'}";

@@ -24,7 +24,6 @@ class TypeHelperDouble extends TypeHelper {
   /// Decodes a `double` value from the provided arguments.
   ///
   /// - [field]: The field to decode.
-  /// - [defaultValue]: The default value for the field, if any.
   ///
   /// The method extracts the value associated with the field's name (converted
   /// to kebab-case) from the `args` map. It then tries to parse the value
@@ -34,15 +33,13 @@ class TypeHelperDouble extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `double` value.
   @override
-  String decode(ArgField field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final arg = "args['$key']";
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
     return isNullable
-        ? (defaultValue != null
-              ? "double.tryParse($arg ?? '$defaultValue')"
-              : "$arg != null ? double.tryParse($arg!) : null")
+        ? "$arg != null ? double.tryParse($arg!) : null"
         : "double.parse($arg.toString())";
   }
 

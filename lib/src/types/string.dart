@@ -24,7 +24,6 @@ class TypeHelperString extends TypeHelper {
   /// Decodes a `String` value from the provided arguments.
   ///
   /// - [field]: The field to decode.
-  /// - [defaultValue]: An optional default value for the field.
   ///
   /// The method extracts the value associated with the field's name (converted
   /// to kebab-case) from the `args` map. If the field is nullable and the value
@@ -34,14 +33,12 @@ class TypeHelperString extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `String` value.
   @override
-  String decode(ArgField field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
     if (isNullable) {
-      return defaultValue != null
-          ? "args['$key'] ?? $defaultValue"
-          : "args['$key']";
+      return "args['$key']";
     }
     return "args['$key'] ?? ''";
   }

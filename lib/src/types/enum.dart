@@ -39,7 +39,6 @@ class TypeHelperEnum extends TypeHelper {
   /// Decodes an enum value from the provided arguments.
   ///
   /// - [field]: The field to decode.
-  /// - [defaultValue]: The default value for the field, if any (not used here).
   ///
   /// This method checks if the field's name (converted to kebab-case) exists
   /// in the `args` map. If the key exists, it looks for a matching enum value
@@ -51,7 +50,7 @@ class TypeHelperEnum extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the enum value.
   @override
-  String decode(ArgField field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final enumName = field.type.getDisplayString();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
@@ -59,13 +58,9 @@ class TypeHelperEnum extends TypeHelper {
         '${clear(enumName)}.values.where((e) => e.toString().split(\'.\').last == args[\'$key\'])';
 
     final valueExpr = isNullable
-        ? (defaultValue != null
-              ? '$valuesExpr.firstOrNull ?? $defaultValue'
-              : '$valuesExpr.firstOrNull')
+        ? '$valuesExpr.firstOrNull'
         : '$valuesExpr.first';
-    final fallbackExpr = isNullable
-        ? (defaultValue ?? 'null')
-        : (defaultValue ?? '$enumName.values.first');
+    final fallbackExpr = isNullable ? 'null' : '$enumName.values.first';
 
     return "args.containsKey('$key') ? $valueExpr : $fallbackExpr";
   }

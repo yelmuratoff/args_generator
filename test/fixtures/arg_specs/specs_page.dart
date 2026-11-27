@@ -19,6 +19,7 @@ class SpecsPage {
     this.count = 3,
     this.fallbackMode = SpecsMode.dark,
     this.optionalMode,
+    this.shorthandMode = .light,
   });
 
   final int id;
@@ -35,4 +36,5 @@ class SpecsPage {
   final int count;
   final SpecsMode fallbackMode;
   final SpecsMode? optionalMode;
+  final SpecsMode shorthandMode;
 }

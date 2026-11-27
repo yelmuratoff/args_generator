@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:collection';
 
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
@@ -7,37 +6,32 @@ import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:args_generator/src/aggregated_output.dart';
 import 'package:args_generator/src/generator.dart';
-import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
-/// Cached regex patterns for performance.
-final RegExp _tokenRegex = RegExp(r'\b[a-zA-Z_$][a-zA-Z0-9_$]*\b');
-final RegExp _importPattern = RegExp(r"import '(.*)' as (\S+);");
+/// Reports a run that cannot start because of its input, such as an include
+/// path that does not exist or a Dart SDK that cannot be found.
+final class ArgsGeneratorException implements Exception {
+  const ArgsGeneratorException(this.message);
 
-/// Maximum number of files to process in parallel.
-const int _maxConcurrency = 4;
+  final String message;
 
-/// Result of processing a single file.
+  @override
+  String toString() => message;
+}
+
 class _FileProcessResult {
   const _FileProcessResult({
-    required this.generatedCode,
-    required this.generatedClassNames,
+    required this.classes,
     required this.annotatedUri,
-    required this.imports,
     required this.librariesByUri,
-    this.error,
   });
 
-  final List<String> generatedCode;
-  final Set<String> generatedClassNames;
-  final String? annotatedUri;
-  final Set<String> imports;
+  final List<GeneratedArgsClass> classes;
+  final String annotatedUri;
   final Map<String, LibraryElement> librariesByUri;
-  final String? error;
-
-  bool get hasError => error != null;
 }
 
 class ArgsGeneratorRunSummary {
@@ -55,12 +49,23 @@ class ArgsGeneratorRunSummary {
 }
 
 class ArgsGeneratorCliRunner {
+  /// Generates the aggregated output for the annotated pages under
+  /// [includePaths].
+  ///
+  /// When any library fails to generate, the output file is neither written
+  /// nor deleted and the failures are counted in
+  /// [ArgsGeneratorRunSummary.errors]. [sdkPath] overrides the Dart SDK the
+  /// analyzer resolves against.
+  ///
+  /// Throws [ArgsGeneratorException] if none of [includePaths] exists or
+  /// [sdkPath] is not a Dart SDK.
   Future<ArgsGeneratorRunSummary> run({
     required Directory projectRoot,
     required List<String> includePaths,
     required String outputPath,
     required bool verbose,
     required bool clean,
+    String? sdkPath,
   }) async {
     final totalStopwatch = Stopwatch()..start();
 
@@ -70,9 +75,12 @@ class ArgsGeneratorCliRunner {
         .toList(growable: false);
 
     if (absoluteIncludePaths.isEmpty) {
-      throw ArgumentError(
+      throw ArgsGeneratorException(
         'No valid paths provided. Tried: ${includePaths.join(', ')}',
       );
+    }
+    if (sdkPath != null && !_isDartSdk(sdkPath)) {
+      throw ArgsGeneratorException('Not a Dart SDK: $sdkPath');
     }
 
     if (verbose) {
@@ -83,6 +91,7 @@ class ArgsGeneratorCliRunner {
     final collection = AnalysisContextCollection(
       includedPaths: absoluteIncludePaths,
       resourceProvider: PhysicalResourceProvider.INSTANCE,
+      sdkPath: sdkPath,
     );
     initStopwatch.stop();
 
@@ -92,25 +101,13 @@ class ArgsGeneratorCliRunner {
       );
     }
 
-    final outputAbsPath = _toAbsolute(projectRoot, outputPath);
-    final outputFile = File(outputAbsPath);
-
-    var written = 0;
-    var deleted = 0;
-    var skipped = 0;
-    var errors = 0;
-
+    final outputFile = File(_toAbsolute(projectRoot, outputPath));
     final emitter = PageArgsEmitter();
-    const checker = TypeChecker.typeNamed(
-      GenerateArgs,
-      inPackage: 'args_generator_annotations',
-    );
 
-    final generatedParts = <String>[];
-    final generatedClassNames = <String>{};
-    final allImports = SplayTreeSet<String>();
+    final classes = <GeneratedArgsClass>[];
     final librariesByUri = <String, LibraryElement>{};
     final annotatedUris = <String>{};
+    var errors = 0;
 
     if (verbose) {
       stdout.writeln('Analyzing source files...');
@@ -122,66 +119,36 @@ class ArgsGeneratorCliRunner {
 
     for (final context in collection.contexts) {
       final session = context.currentSession;
-      final analyzedFiles = context.contextRoot
-          .analyzedFiles()
-          .where((p) => p.endsWith('.dart'))
-          .where((p) => !_isDefinitelyGenerated(p))
-          .toList(growable: false);
-
-      totalFiles += analyzedFiles.length;
-
-      // Pre-filter files that might contain annotation (async reads in batches).
-      final candidateFiles = <String>[];
-      for (var i = 0; i < analyzedFiles.length; i += _maxConcurrency) {
-        final batch = analyzedFiles.skip(i).take(_maxConcurrency);
-        final readResults = await Future.wait(
-          batch.map((filePath) async {
-            final content = await File(filePath).readAsString();
-            if (content.contains('GenerateArgs')) {
-              return filePath;
-            }
-            return null;
-          }),
-        );
-        for (final path in readResults) {
-          if (path != null) candidateFiles.add(path);
-        }
-      }
-
+      final dartFiles = [
+        for (final path in context.contextRoot.analyzedFiles())
+          if (path.endsWith('.dart') && !_isDefinitelyGenerated(path)) path,
+      ];
+      final candidateFiles = [
+        for (final path in dartFiles)
+          if (File(path).readAsStringSync().contains('GenerateArgs')) path,
+      ];
+      totalFiles += dartFiles.length;
       candidateCount += candidateFiles.length;
 
-      // Process files in parallel batches.
-      for (var i = 0; i < candidateFiles.length; i += _maxConcurrency) {
-        final batch = candidateFiles.skip(i).take(_maxConcurrency);
-        final batchResults = await Future.wait(
-          batch.map(
-            (filePath) => _processFile(
-              session: session,
-              filePath: filePath,
-              emitter: emitter,
-              checker: checker,
-              projectRoot: projectRoot,
-              verbose: verbose,
-            ),
-          ),
-        );
-
-        for (final result in batchResults) {
+      for (final filePath in candidateFiles) {
+        try {
+          final result = await _processFile(
+            session: session,
+            filePath: filePath,
+            emitter: emitter,
+            projectRoot: projectRoot,
+            verbose: verbose,
+          );
           if (result == null) continue;
-
-          if (result.hasError) {
-            errors++;
-            stderr.writeln(result.error);
-            continue;
-          }
-
-          generatedParts.addAll(result.generatedCode);
-          generatedClassNames.addAll(result.generatedClassNames);
-          if (result.annotatedUri != null) {
-            annotatedUris.add(result.annotatedUri!);
-          }
-          allImports.addAll(result.imports);
+          classes.addAll(result.classes);
+          annotatedUris.add(result.annotatedUri);
           librariesByUri.addAll(result.librariesByUri);
+        } on InvalidGenerationSourceError catch (e) {
+          errors++;
+          _reportFailure(projectRoot, filePath, e);
+        } on Exception catch (e) {
+          errors++;
+          _reportFailure(projectRoot, filePath, e);
         }
       }
     }
@@ -190,16 +157,29 @@ class ArgsGeneratorCliRunner {
 
     if (verbose) {
       stdout.writeln(
-        '  Scanned $totalFiles files, found $candidateCount candidates in ${analysisStopwatch.elapsedMilliseconds}ms',
+        '  Scanned $totalFiles files, found $candidateCount candidates in '
+        '${analysisStopwatch.elapsedMilliseconds}ms',
       );
     }
 
-    if (generatedParts.isEmpty) {
-      totalStopwatch.stop();
+    if (errors > 0) {
+      stderr.writeln(
+        'args_generator: left $outputPath unchanged because $errors '
+        '${errors == 1 ? 'library' : 'libraries'} failed to generate.',
+      );
+      return ArgsGeneratorRunSummary(
+        writtenFiles: 0,
+        deletedFiles: 0,
+        skippedFiles: 0,
+        errors: errors,
+      );
+    }
+
+    if (classes.isEmpty) {
       if (verbose) {
         stdout.writeln('No annotated classes found.');
-        stdout.writeln('  Total time: ${totalStopwatch.elapsedMilliseconds}ms');
       }
+      var deleted = 0;
       if (shouldDeleteStaleOutput(
         clean: clean,
         hasAnnotatedElements: false,
@@ -211,95 +191,33 @@ class ArgsGeneratorCliRunner {
         outputFile.deleteSync();
         deleted++;
       }
+      _reportTotal(verbose, totalStopwatch);
       return ArgsGeneratorRunSummary(
-        writtenFiles: written,
+        writtenFiles: 0,
         deletedFiles: deleted,
-        skippedFiles: skipped,
-        errors: errors,
+        skippedFiles: 0,
+        errors: 0,
       );
     }
-
-    final codegenStopwatch = Stopwatch()..start();
 
     if (verbose) {
       stdout.writeln('Generating code and resolving imports...');
     }
 
-    // Assign unique prefixes.
-    final uriToPrefix = <String, String>{};
-    var prefixCounter = 0;
-    for (final uri in allImports) {
-      var prefix = '_i${prefixCounter++}';
-      while (uriToPrefix.containsValue(prefix)) {
-        prefix = '_i${prefixCounter++}';
-      }
-      uriToPrefix[uri] = prefix;
-    }
-
-    // Extract all used names from generated code to optimize export traversal
-    final usedNames = <String>{};
-    for (final part in generatedParts) {
-      usedNames.addAll(_tokenRegex.allMatches(part).map((m) => m.group(0)!));
-    }
+    final codegenStopwatch = Stopwatch()..start();
+    final output = assembleAggregatedOutput(
+      classes: classes,
+      libraries: librariesByUri,
+      annotatedUris: annotatedUris,
+    );
+    codegenStopwatch.stop();
 
     if (verbose) {
-      stdout.writeln('Resolving top-level names for prefixing...');
-    }
-
-    // Collect top-level classes/enums to prefix.
-    final classToPrefix = <String, String>{};
-    final libraryExportsCache = <LibraryElement, Set<String>>{};
-
-    for (final uri in allImports) {
-      final prefix = uriToPrefix[uri]!;
-      final library = librariesByUri[uri];
-      if (library == null) {
-        continue;
-      }
-
-      final exportedNames = _getAllExportedNames(library, libraryExportsCache);
-      for (final name in exportedNames) {
-        if (usedNames.contains(name) && !generatedClassNames.contains(name)) {
-          classToPrefix[name] = prefix;
-        }
-      }
-    }
-
-    // Replace class names with their respective prefixes (single pass).
-    var body = generatedParts.join('\n\n');
-    if (classToPrefix.isNotEmpty) {
-      final pattern = RegExp(r'\b(' + classToPrefix.keys.join('|') + r')\b');
-      body = body.replaceAllMapped(
-        pattern,
-        (m) => '${classToPrefix[m.group(1)!]!}.${m.group(1)!}',
+      stdout.writeln(
+        '  Code generation completed in '
+        '${codegenStopwatch.elapsedMilliseconds}ms',
       );
     }
-
-    final imports = allImports
-        .map((uri) {
-          final prefix = uriToPrefix[uri]!;
-          return "import '$uri' as $prefix;";
-        })
-        .where((line) {
-          final match = _importPattern.firstMatch(line);
-          if (match == null) return false;
-          final importUri = match.group(1)!;
-          final importPrefix = match.group(2)!;
-          return annotatedUris.contains(importUri) ||
-              body.contains('$importPrefix.');
-        })
-        .toList(growable: false);
-
-    // Keep all imports (fast + deterministic). The generated body uses prefixes.
-    final output = [
-      '// GENERATED CODE - DO NOT MODIFY BY HAND',
-      '// ignore_for_file: type=lint, unused_import',
-      '',
-      ...imports,
-      '',
-      body,
-      '',
-    ].join('\n');
 
     final existing = outputFile.existsSync()
         ? outputFile.readAsStringSync()
@@ -308,40 +226,96 @@ class ArgsGeneratorCliRunner {
       if (verbose) {
         stdout.writeln('Output file is up to date.');
       }
-      skipped++;
-      return ArgsGeneratorRunSummary(
-        writtenFiles: written,
-        deletedFiles: deleted,
-        skippedFiles: skipped,
-        errors: errors,
+      _reportTotal(verbose, totalStopwatch);
+      return const ArgsGeneratorRunSummary(
+        writtenFiles: 0,
+        deletedFiles: 0,
+        skippedFiles: 1,
+        errors: 0,
       );
     }
 
-    codegenStopwatch.stop();
-
     if (verbose) {
-      stdout.writeln(
-        '  Code generation completed in ${codegenStopwatch.elapsedMilliseconds}ms',
-      );
       stdout.writeln('Writing output to: $outputPath');
     }
-
     outputFile.parent.createSync(recursive: true);
     outputFile.writeAsStringSync(output);
-    written++;
+    _reportTotal(verbose, totalStopwatch);
 
-    totalStopwatch.stop();
-
-    if (verbose) {
-      stdout.writeln('  Total time: ${totalStopwatch.elapsedMilliseconds}ms');
-    }
-
-    return ArgsGeneratorRunSummary(
-      writtenFiles: written,
-      deletedFiles: deleted,
-      skippedFiles: skipped,
-      errors: errors,
+    return const ArgsGeneratorRunSummary(
+      writtenFiles: 1,
+      deletedFiles: 0,
+      skippedFiles: 0,
+      errors: 0,
     );
+  }
+}
+
+/// The Dart SDK the analyzer should resolve against, or `null` when the
+/// running executable sits inside one.
+///
+/// A natively compiled CLI (`dart compile exe`, `dart install`) runs outside
+/// the SDK, so the SDK is looked up from `FLUTTER_ROOT`, then from the `dart`
+/// executable on `PATH`.
+///
+/// Throws [ArgsGeneratorException] if no SDK is found.
+String? detectSdkPath({
+  String? resolvedExecutable,
+  Map<String, String>? environment,
+}) {
+  final executable = resolvedExecutable ?? Platform.resolvedExecutable;
+  final env = environment ?? Platform.environment;
+
+  if (_isDartSdk(File(executable).parent.parent.path)) return null;
+
+  final flutterRoot = env['FLUTTER_ROOT'];
+  if (flutterRoot != null) {
+    final flutterSdk = _flutterDartSdk(flutterRoot);
+    if (_isDartSdk(flutterSdk)) return flutterSdk;
+  }
+
+  final pathSeparator = Platform.isWindows ? ';' : ':';
+  final dartNames = Platform.isWindows ? ['dart.exe', 'dart.bat'] : ['dart'];
+  for (final directory in (env['PATH'] ?? '').split(pathSeparator)) {
+    if (directory.isEmpty) continue;
+    for (final dartName in dartNames) {
+      final dart = File('$directory${Platform.pathSeparator}$dartName');
+      if (!dart.existsSync()) continue;
+      final binDirectory = File(dart.resolveSymbolicLinksSync()).parent;
+      if (_isDartSdk(binDirectory.parent.path)) {
+        return binDirectory.parent.path;
+      }
+      final flutterSdk = _flutterDartSdk(binDirectory.parent.path);
+      if (_isDartSdk(flutterSdk)) return flutterSdk;
+    }
+  }
+
+  throw const ArgsGeneratorException(
+    'Could not find the Dart SDK. Pass --sdk-path or set FLUTTER_ROOT.',
+  );
+}
+
+String _flutterDartSdk(String flutterRoot) {
+  final sep = Platform.pathSeparator;
+  return '$flutterRoot${sep}bin${sep}cache${sep}dart-sdk';
+}
+
+bool _isDartSdk(String path) {
+  final sep = Platform.pathSeparator;
+  return File('$path${sep}version').existsSync() &&
+      Directory('$path${sep}lib${sep}_internal').existsSync();
+}
+
+void _reportFailure(Directory projectRoot, String filePath, Object error) {
+  stderr.writeln(
+    'args_generator: error while processing '
+    '${_prettyPath(projectRoot, filePath)}: $error',
+  );
+}
+
+void _reportTotal(bool verbose, Stopwatch totalStopwatch) {
+  if (verbose) {
+    stdout.writeln('  Total time: ${totalStopwatch.elapsedMilliseconds}ms');
   }
 }
 
@@ -389,142 +363,77 @@ String _basename(String filePath) {
   return idx == -1 ? filePath : filePath.substring(idx + 1);
 }
 
-Set<String> _getAllExportedNames(
-  LibraryElement lib,
-  Map<LibraryElement, Set<String>> cache,
-) {
-  if (cache.containsKey(lib)) {
-    return cache[lib]!;
-  }
-
-  final names = <String>{};
-  cache[lib] = names; // Initialize with empty to handle cycles
-
-  for (final el in <Element>[...lib.classes, ...lib.enums]) {
-    final name = el.name;
-    if (name != null && name.isNotEmpty) {
-      names.add(name);
-    }
-  }
-
-  for (final exported in lib.exportedLibraries) {
-    final uri = exported.uri.toString();
-    if (!uri.startsWith('dart:')) {
-      names.addAll(_getAllExportedNames(exported, cache));
-    }
-  }
-
-  return names;
-}
-
-/// Processes a single file and returns the result or null if skipped.
 Future<_FileProcessResult?> _processFile({
   required AnalysisSession session,
   required String filePath,
   required PageArgsEmitter emitter,
-  required TypeChecker checker,
   required Directory projectRoot,
   required bool verbose,
 }) async {
-  try {
-    final parsed = session.getParsedUnit(filePath);
-    if (parsed is! ParsedUnitResult) {
-      return null;
-    }
-
-    final isPartOf = parsed.unit.directives.any((d) => d is PartOfDirective);
-    if (isPartOf) {
-      return null;
-    }
-
-    // Early exit: check AST for @GenerateArgs annotation before expensive resolution
-    final hasAnnotationInAst = parsed.unit.declarations.any((decl) {
-      if (decl is! ClassDeclaration) return false;
-      return decl.metadata.any((annotation) {
-        final name = annotation.name.name;
-        return name == 'GenerateArgs';
-      });
-    });
-    if (!hasAnnotationInAst) {
-      return null;
-    }
-
-    if (verbose) {
-      stdout.writeln('Processing: ${_prettyPath(projectRoot, filePath)}');
-    }
-
-    final resolveStopwatch = Stopwatch()..start();
-    // Use getResolvedUnit instead of getResolvedLibrary - faster for single file
-    final resolved = await session.getResolvedUnit(filePath);
-    resolveStopwatch.stop();
-    if (verbose) {
-      stdout.writeln('  Resolved in ${resolveStopwatch.elapsedMilliseconds}ms');
-    }
-
-    if (resolved is! ResolvedUnitResult) {
-      return null;
-    }
-
-    final libraryElement = resolved.libraryElement;
-    final libraryReader = LibraryReader(libraryElement);
-    final annotated = libraryReader.annotatedWith(checker).toList();
-    if (annotated.isEmpty) {
-      return null;
-    }
-
-    final generatedCode = <String>[];
-    final generatedClassNames = <String>{};
-    final imports = <String>{};
-    final librariesByUri = <String, LibraryElement>{};
-
-    for (final item in annotated) {
-      final element = item.element;
-      if (element is! ClassElement) {
-        continue;
-      }
-      final code = emitter.generateForClass(element);
-      if (code.trim().isNotEmpty) {
-        generatedCode.add(code);
-        generatedClassNames.add(PageArgsEmitter.argsClassNameOf(element));
-      }
-    }
-
-    final uriStr = libraryElement.uri.toString();
-    String? annotatedUri;
-
-    if (!uriStr.startsWith('dart:')) {
-      annotatedUri = uriStr;
-      imports.add(uriStr);
-      librariesByUri[uriStr] = libraryElement;
-    }
-
-    final importedLibraries = libraryElement.fragments.expand(
-      (fragment) => fragment.importedLibraries,
-    );
-    for (final imp in importedLibraries) {
-      final impUri = imp.uri.toString();
-      if (!impUri.startsWith('dart:')) {
-        imports.add(impUri);
-        librariesByUri[impUri] = imp;
-      }
-    }
-
-    return _FileProcessResult(
-      generatedCode: generatedCode,
-      generatedClassNames: generatedClassNames,
-      annotatedUri: annotatedUri,
-      imports: imports,
-      librariesByUri: librariesByUri,
-    );
-  } catch (e) {
-    final prettyPath = _prettyPath(projectRoot, filePath);
-    return _FileProcessResult(
-      generatedCode: const [],
-      generatedClassNames: const {},
-      annotatedUri: null,
-      imports: const {},
-      librariesByUri: const {},
-      error: 'args_generator: error while processing $prettyPath: $e',
-    );
+  final parsed = session.getParsedUnit(filePath);
+  if (parsed is! ParsedUnitResult) {
+    return null;
   }
+
+  final isPartOf = parsed.unit.directives.any((d) => d is PartOfDirective);
+  if (isPartOf) {
+    return null;
+  }
+
+  final hasAnnotationInAst = parsed.unit.declarations.any((decl) {
+    if (decl is! ClassDeclaration) return false;
+    return decl.metadata.any(
+      (annotation) => annotation.name.name == 'GenerateArgs',
+    );
+  });
+  if (!hasAnnotationInAst) {
+    return null;
+  }
+
+  if (verbose) {
+    stdout.writeln('Processing: ${_prettyPath(projectRoot, filePath)}');
+  }
+
+  final resolveStopwatch = Stopwatch()..start();
+  final resolved = await session.getResolvedUnit(filePath);
+  resolveStopwatch.stop();
+  if (verbose) {
+    stdout.writeln('  Resolved in ${resolveStopwatch.elapsedMilliseconds}ms');
+  }
+
+  if (resolved is! ResolvedUnitResult) {
+    return null;
+  }
+
+  final libraryElement = resolved.libraryElement;
+  final uri = libraryElement.uri.toString();
+  final classes = <GeneratedArgsClass>[
+    for (final item in LibraryReader(
+      libraryElement,
+    ).annotatedWith(generateArgsChecker))
+      if (item.element case final ClassElement element)
+        (
+          libraryUri: uri,
+          className: PageArgsEmitter.argsClassNameOf(element),
+          code: emitter.generateForClass(element),
+        ),
+  ];
+  if (classes.isEmpty) {
+    return null;
+  }
+
+  final librariesByUri = <String, LibraryElement>{uri: libraryElement};
+  for (final fragment in libraryElement.fragments) {
+    for (final imported in fragment.importedLibraries) {
+      if (!imported.uri.isScheme('dart')) {
+        librariesByUri[imported.uri.toString()] = imported;
+      }
+    }
+  }
+
+  return _FileProcessResult(
+    classes: classes,
+    annotatedUri: uri,
+    librariesByUri: librariesByUri,
+  );
 }

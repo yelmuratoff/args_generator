@@ -79,7 +79,7 @@ class TestPageArgs implements _i0.PageArgs {
         numValue: num.parse(args['num-value'].toString()),
         stringValue: args['string-value'] ?? '',
         uriValue: Uri.parse(args['uri-value'].toString()),
-        iterableValue: args.containsKey('iterable-value') ? args['iterable-value']!.split(',').map((e) => e).toList() : [],
+        iterableValue: args.containsKey('iterable-value') ? args['iterable-value']!.split(',') : [],
         optionalBigInt: args['optional-big-int'] != null ? BigInt.tryParse(args['optional-big-int']!) : null,
         optionalBool: args.containsKey('optional-bool') ? (args['optional-bool']?.toLowerCase() == 'true') : null,
         optionalDateTime: args['optional-date-time'] != null ? DateTime.tryParse(args['optional-date-time']!) : null,
@@ -89,14 +89,14 @@ class TestPageArgs implements _i0.PageArgs {
         optionalNum: args['optional-num'] != null ? num.tryParse(args['optional-num']!) : null,
         optionalString: args['optional-string'],
         optionalUri: args['optional-uri'] != null ? Uri.tryParse(args['optional-uri']!) : null,
-        optionalIterable: args.containsKey('optional-iterable') ? args['optional-iterable']!.split(',').map((e) => e).toList() : null,
-        defaultBool: args.containsKey('default-bool') ? (args['default-bool']?.toLowerCase() == 'true') : null,
-        defaultDouble: double.tryParse(args['default-double'] ?? '0.0'),
-        defType: args.containsKey('def-type') ? _i2.TestEnum.values.where((e) => e.toString().split('.').last == args['def-type']).firstOrNull ?? _i2.TestEnum.value3 : _i2.TestEnum.value3,
-        defaultInt: int.tryParse(args['default-int'] ?? '0'),
-        defaultNum: num.tryParse(args['default-num'] ?? '0'),
-        defaultString: args['default-string'] ?? '',
-        defaultIterable: args.containsKey('default-iterable') ? args['default-iterable']!.split(',').map((e) => e).toList() : null
+        optionalIterable: args.containsKey('optional-iterable') ? args['optional-iterable']!.split(',') : null,
+        defaultBool: args.containsKey('default-bool') ? (args.containsKey('default-bool') ? (args['default-bool']?.toLowerCase() == 'true') : null) : false,
+        defaultDouble: args.containsKey('default-double') ? (args['default-double'] != null ? double.tryParse(args['default-double']!) : null) : 0.0,
+        defType: args.containsKey('def-type') ? (args.containsKey('def-type') ? _i2.TestEnum.values.where((e) => e.toString().split('.').last == args['def-type']).firstOrNull : null) : _i2.TestEnum.value3,
+        defaultInt: args.containsKey('default-int') ? (args['default-int'] != null ? int.tryParse(args['default-int']!) : null) : 0,
+        defaultNum: args.containsKey('default-num') ? (args['default-num'] != null ? num.tryParse(args['default-num']!) : null) : 0,
+        defaultString: args.containsKey('default-string') ? (args['default-string']) : '',
+        defaultIterable: args.containsKey('default-iterable') ? (args.containsKey('default-iterable') ? args['default-iterable']!.split(',') : null) : const []
       );
     } catch (e) {
       return null;
@@ -290,7 +290,7 @@ class SecondPageArgs implements _i0.PageArgs {
         numValue: num.parse(args['num-value'].toString()),
         stringValue: args['string-value'] ?? '',
         uriValue: Uri.parse(args['uri-value'].toString()),
-        iterableValue: args.containsKey('iterable-value') ? args['iterable-value']!.split(',').map((e) => e).toList() : [],
+        iterableValue: args.containsKey('iterable-value') ? args['iterable-value']!.split(',') : [],
         optionalBigInt: args['optional-big-int'] != null ? BigInt.tryParse(args['optional-big-int']!) : null,
         optionalBool: args.containsKey('optional-bool') ? (args['optional-bool']?.toLowerCase() == 'true') : null,
         optionalDateTime: args['optional-date-time'] != null ? DateTime.tryParse(args['optional-date-time']!) : null,
@@ -299,13 +299,13 @@ class SecondPageArgs implements _i0.PageArgs {
         optionalNum: args['optional-num'] != null ? num.tryParse(args['optional-num']!) : null,
         optionalString: args['optional-string'],
         optionalUri: args['optional-uri'] != null ? Uri.tryParse(args['optional-uri']!) : null,
-        optionalIterable: args.containsKey('optional-iterable') ? args['optional-iterable']!.split(',').map((e) => e).toList() : null,
-        defaultBool: args.containsKey('default-bool') ? (args['default-bool']?.toLowerCase() == 'true') : null,
-        defaultDouble: double.tryParse(args['default-double'] ?? '0.0'),
-        defaultInt: int.tryParse(args['default-int'] ?? '0'),
-        defaultNum: num.tryParse(args['default-num'] ?? '0'),
-        defaultString: args['default-string'] ?? '',
-        defaultIterable: args.containsKey('default-iterable') ? args['default-iterable']!.split(',').map((e) => e).toList() : null
+        optionalIterable: args.containsKey('optional-iterable') ? args['optional-iterable']!.split(',') : null,
+        defaultBool: args.containsKey('default-bool') ? (args.containsKey('default-bool') ? (args['default-bool']?.toLowerCase() == 'true') : null) : false,
+        defaultDouble: args.containsKey('default-double') ? (args['default-double'] != null ? double.tryParse(args['default-double']!) : null) : 0.0,
+        defaultInt: args.containsKey('default-int') ? (args['default-int'] != null ? int.tryParse(args['default-int']!) : null) : 0,
+        defaultNum: args.containsKey('default-num') ? (args['default-num'] != null ? num.tryParse(args['default-num']!) : null) : 0,
+        defaultString: args.containsKey('default-string') ? (args['default-string']) : '',
+        defaultIterable: args.containsKey('default-iterable') ? (args.containsKey('default-iterable') ? args['default-iterable']!.split(',') : null) : const []
       );
     } catch (e) {
       return null;

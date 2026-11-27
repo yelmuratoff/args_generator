@@ -31,7 +31,6 @@ class TypeHelperUri extends TypeHelper {
   /// Decodes a `Uri` value from the provided arguments.
   ///
   /// - [field]: The field to decode.
-  /// - [defaultValue]: An optional default value for the field (not used here).
   ///
   /// The method checks for the field's name (converted to kebab-case) in the
   /// `args` map. If found, it tries to parse the value into a `Uri` using
@@ -41,15 +40,13 @@ class TypeHelperUri extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `Uri` value.
   @override
-  String decode(ArgField field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final arg = "args['$key']";
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
     if (isNullable) {
-      return defaultValue != null
-          ? "Uri.tryParse($arg ?? $defaultValue)"
-          : "$arg != null ? Uri.tryParse($arg!) : null";
+      return "$arg != null ? Uri.tryParse($arg!) : null";
     }
     return "Uri.parse($arg.toString())";
   }

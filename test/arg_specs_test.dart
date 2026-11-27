@@ -100,6 +100,9 @@ void main() {
             'options: $page.SpecsMode.values),',
         "$spec('optional-mode', $kind.choice, "
             'options: $page.SpecsMode.values),',
+        "$spec('shorthand-mode', $kind.choice, "
+            'defaultValue: $page.SpecsMode.light, '
+            'options: $page.SpecsMode.values),',
       ]) {
         expect(generated, contains(line));
       }
