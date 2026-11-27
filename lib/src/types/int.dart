@@ -1,6 +1,6 @@
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:args_generator/src/types/type_helper.dart';
 import 'package:args_generator/src/utils/helpers.dart';
 
@@ -9,6 +9,9 @@ import 'package:args_generator/src/utils/helpers.dart';
 /// This class provides the logic for decoding `int` values from a map
 /// of arguments and encoding `int` fields back into a map format.
 class TypeHelperInt extends TypeHelper {
+  @override
+  PageArgKind get kind => PageArgKind.integer;
+
   /// Determines if the given [type] matches the `int` type.
   ///
   /// - [type]: The [DartType] to check.
@@ -20,8 +23,7 @@ class TypeHelperInt extends TypeHelper {
 
   /// Decodes an `int` value from the provided arguments.
   ///
-  /// - [field]: The [ParameterElement] representing the field to decode.
-  /// - [defaultValue]: The default value for the field, if any (not used here).
+  /// - [field]: The field to decode.
   ///
   /// This method extracts the value associated with the field's name (converted
   /// to kebab-case) from the `args` map. It then tries to parse the value into
@@ -31,21 +33,19 @@ class TypeHelperInt extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `int` value.
   @override
-  String decode(ParameterElement field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final arg = "args['$key']";
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
     return isNullable
-        ? (defaultValue != null
-            ? "int.tryParse($arg ?? '$defaultValue')"
-            : "$arg != null ? int.tryParse($arg!) : null")
+        ? "$arg != null ? int.tryParse($arg!) : null"
         : "int.parse($arg.toString())";
   }
 
   /// Encodes an `int` field into a map format.
   ///
-  /// - [field]: The [ParameterElement] representing the field to encode.
+  /// - [field]: The field to encode.
   ///
   /// If the field is nullable, the generated code includes a conditional check
   /// to ensure the field is not `null` before adding it to the map. The field's
@@ -55,7 +55,7 @@ class TypeHelperInt extends TypeHelper {
   /// Returns:
   /// A string representing the code to encode the `int` value.
   @override
-  String encode(ParameterElement field) {
+  String encode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     final name = field.name;

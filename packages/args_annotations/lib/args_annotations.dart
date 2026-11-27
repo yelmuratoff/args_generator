@@ -1,5 +1,8 @@
 library;
 
+export 'src/page_arg_spec.dart';
+export 'src/page_args_schema.dart';
+
 /// Annotation used to mark classes for which page arguments should be generated.
 ///
 /// When applied to a class, the `@GenerateArgs` annotation triggers the

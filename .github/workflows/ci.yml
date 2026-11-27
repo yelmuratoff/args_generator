@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Package (Dart ${{ matrix.sdk }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ['3.11.0', stable]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: dart-lang/setup-dart@2286a0c042b44434fe26d292bbce8d34f7ec662b # v1.8.2
+        with:
+          sdk: ${{ matrix.sdk }}
+      - run: dart pub get --no-example
+      - if: matrix.sdk == 'stable'
+        run: dart format --output=none --set-exit-if-changed lib bin test packages/args_annotations
+      - run: dart analyze --fatal-infos lib bin test
+      - run: dart test
+      - name: Analyze annotations package
+        working-directory: packages/args_annotations
+        run: |
+          dart pub get
+          dart analyze --fatal-infos
+      - run: dart pub publish --dry-run
+      - name: Publish dry run (annotations)
+        working-directory: packages/args_annotations
+        run: dart pub publish --dry-run
+
+  example:
+    name: Example (Flutter ${{ matrix.flutter }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        flutter: ['3.47.5', '3.50.0']
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ matrix.flutter }}
+          cache: true
+      - name: Regenerate args
+        working-directory: example
+        run: |
+          flutter pub get
+          dart run args_generator --fail-on-error -o lib/generator/router.args.g.dart
+      - name: Generated output is committed
+        run: git diff --exit-code -- example/lib/generator
+      - name: Generated output compiles
+        working-directory: example
+        run: flutter analyze --no-fatal-infos lib

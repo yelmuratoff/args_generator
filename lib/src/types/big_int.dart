@@ -1,6 +1,6 @@
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:args_generator/src/types/type_helper.dart';
 import 'package:args_generator/src/utils/helpers.dart';
 
@@ -9,6 +9,9 @@ import 'package:args_generator/src/utils/helpers.dart';
 /// This class provides the logic for decoding `BigInt` values from a map
 /// of arguments and encoding `BigInt` fields back into a map format.
 class TypeHelperBigInt extends TypeHelper {
+  @override
+  PageArgKind get kind => PageArgKind.bigInteger;
+
   /// Determines if the given [type] matches the `BigInt` type.
   ///
   /// - [type]: The [DartType] to check.
@@ -27,8 +30,7 @@ class TypeHelperBigInt extends TypeHelper {
 
   /// Decodes a `BigInt` value from the provided arguments.
   ///
-  /// - [field]: The [ParameterElement] representing the field to decode.
-  /// - [defaultValue]: The default value for the field, if any.
+  /// - [field]: The field to decode.
   ///
   /// Converts the value in the `args` map (with the field name converted
   /// to kebab-case) into a `BigInt` using `BigInt.tryParse`. If the field is
@@ -37,21 +39,19 @@ class TypeHelperBigInt extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `BigInt` value.
   @override
-  String decode(ParameterElement field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final arg = "args['$key']";
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
     return isNullable
-        ? (defaultValue != null
-            ? "BigInt.tryParse($arg ?? $defaultValue)"
-            : "$arg != null ? BigInt.tryParse($arg!) : null")
+        ? "$arg != null ? BigInt.tryParse($arg!) : null"
         : "BigInt.parse($arg.toString())";
   }
 
   /// Encodes a `BigInt` field into a map format.
   ///
-  /// - [field]: The [ParameterElement] representing the field to encode.
+  /// - [field]: The field to encode.
   ///
   /// If the field is nullable, the generated code includes a conditional check
   /// to ensure the field is not `null` before adding it to the map. The field's
@@ -60,7 +60,7 @@ class TypeHelperBigInt extends TypeHelper {
   /// Returns:
   /// A string representing the code to encode the `BigInt` value.
   @override
-  String encode(ParameterElement field) {
+  String encode(ArgField field) {
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     final name = field.name;
     final key = name.convertToKebabCase();

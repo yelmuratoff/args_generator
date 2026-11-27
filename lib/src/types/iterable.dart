@@ -1,6 +1,6 @@
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:args_generator/src/types/type_helper.dart';
 import 'package:args_generator/src/utils/helpers.dart';
 
@@ -9,6 +9,9 @@ import 'package:args_generator/src/utils/helpers.dart';
 /// This class provides the logic for decoding `Iterable` values from a map
 /// of arguments and encoding `Iterable` fields back into a map format.
 class TypeHelperIterable extends TypeHelper {
+  @override
+  PageArgKind get kind => PageArgKind.list;
+
   /// Determines if the given [type] matches the `Iterable` type.
   ///
   /// - [type]: The [DartType] to check.
@@ -17,18 +20,17 @@ class TypeHelperIterable extends TypeHelper {
   /// `true` if the [type] is assignable to `Iterable`; otherwise, `false`.
   @override
   bool matchesType(DartType type) {
-    if (type is InterfaceType) {
-      final element = type.element;
-
-      return element.name == 'List' || element.name == 'Iterable';
-    }
-    return false;
+    if (type is! InterfaceType) return false;
+    final element = type.element;
+    if (!element.library.isDartCore) return false;
+    if (element.name != 'List' && element.name != 'Iterable') return false;
+    final itemType = type.typeArguments.single;
+    return itemType.isDartCoreString || itemType.isLikeDynamic;
   }
 
   /// Decodes an `Iterable` value from the provided arguments.
   ///
-  /// - [field]: The [ParameterElement] representing the field to decode.
-  /// - [defaultValue]: The default value for the field, if any (not used here).
+  /// - [field]: The field to decode.
   ///
   /// The method checks if the field's name (converted to kebab-case) exists in
   /// the `args` map. If it exists, the value is split by commas and converted
@@ -39,23 +41,16 @@ class TypeHelperIterable extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the `Iterable` value.
   @override
-  String decode(ParameterElement field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
 
-    return '''
-args.containsKey('$key')
-  ? args['$key']!
-      .split(',')
-      .map((e) => e)
-      .toList()
-  : ${isNullable ? 'null' : '[]'}
-''';
+    return "args.containsKey('$key') ? args['$key']!.split(',') : ${isNullable ? 'null' : '[]'}";
   }
 
   /// Encodes an `Iterable` field into a map format.
   ///
-  /// - [field]: The [ParameterElement] representing the field to encode.
+  /// - [field]: The field to encode.
   ///
   /// If the field is nullable, the generated code includes a conditional check
   /// to ensure the field is not `null` before adding it to the map. The field's
@@ -65,14 +60,14 @@ args.containsKey('$key')
   /// Returns:
   /// A string representing the code to encode the `Iterable` value.
   @override
-  String encode(ParameterElement field) {
+  String encode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     final name = field.name;
 
     if (isNullable) {
-      return 'if ($name != null) \'$key\': $name!.map((e) => e.toString()).join(",")';
+      return 'if ($name != null && $name!.isNotEmpty) \'$key\': $name!.map((e) => e.toString()).join(",")';
     }
-    return '\'$key\': $name.map((e) => e.toString()).join(",")';
+    return 'if ($name.isNotEmpty) \'$key\': $name.map((e) => e.toString()).join(",")';
   }
 }

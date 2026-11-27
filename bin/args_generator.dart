@@ -17,6 +17,12 @@ Future<void> main(List<String> arguments) async {
       defaultsTo: const ['lib'],
       help: 'Paths to analyze (relative to current directory).',
     )
+    ..addOption(
+      'output',
+      abbr: 'o',
+      defaultsTo: 'lib/args/router.args.g.dart',
+      help: 'Output file path for aggregated generation.',
+    )
     ..addFlag(
       'verbose',
       abbr: 'v',
@@ -32,6 +38,12 @@ Future<void> main(List<String> arguments) async {
       'clean',
       defaultsTo: false,
       help: 'Delete stale *.args.g.dart outputs when no @GenerateArgs remain.',
+    )
+    ..addOption(
+      'sdk-path',
+      help:
+          'Dart SDK to analyze against. Detected from FLUTTER_ROOT or the '
+          'dart on PATH when the CLI runs as a compiled executable.',
     );
 
   late final ArgResults results;
@@ -50,8 +62,9 @@ Future<void> main(List<String> arguments) async {
   }
 
   final projectRoot = Directory.current;
-  final pubspec =
-      File('${projectRoot.path}${Platform.pathSeparator}pubspec.yaml');
+  final pubspec = File(
+    '${projectRoot.path}${Platform.pathSeparator}pubspec.yaml',
+  );
   if (!pubspec.existsSync()) {
     stderr.writeln(
       'No pubspec.yaml found in: ${projectRoot.path}\n'
@@ -61,22 +74,32 @@ Future<void> main(List<String> arguments) async {
     return;
   }
 
-  final includePaths = (results.multiOption('path')).toList(growable: false);
+  final includePaths = results.multiOption('path').toList(growable: false);
+  final outputPath = results.option('output')!;
   final verbose = results.flag('verbose');
   final failOnError = results.flag('fail-on-error');
   final clean = results.flag('clean');
 
-  final runner = ArgsGeneratorCliRunner();
-  final summary = await runner.run(
-    projectRoot: projectRoot,
-    includePaths: includePaths,
-    verbose: verbose,
-    clean: clean,
-  );
+  final ArgsGeneratorRunSummary summary;
+  try {
+    summary = await ArgsGeneratorCliRunner().run(
+      projectRoot: projectRoot,
+      includePaths: includePaths,
+      outputPath: outputPath,
+      verbose: verbose,
+      clean: clean,
+      sdkPath: results.option('sdk-path') ?? detectSdkPath(),
+    );
+  } on ArgsGeneratorException catch (e) {
+    stderr.writeln('args_generator: ${e.message}');
+    exitCode = 64;
+    return;
+  }
 
   if (verbose) {
     stdout.writeln('---');
   }
+
   stdout.writeln(
     'args_generator: generated ${summary.writtenFiles} file(s), '
     'deleted ${summary.deletedFiles}, '

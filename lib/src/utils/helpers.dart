@@ -75,6 +75,9 @@ extension DartTypeExtension on DartType {
   }
 }
 
+/// Cached regex pattern for kebab-case conversion.
+final RegExp _kebabCasePattern = RegExp(r'(?<=[a-z])(?=[A-Z])');
+
 /// Extension on [String] to provide additional string manipulation utilities.
 extension StringX on String {
   /// Converts a camelCase or PascalCase string into kebab-case.
@@ -88,7 +91,6 @@ extension StringX on String {
   /// Returns:
   /// A kebab-case version of the string.
   String convertToKebabCase() {
-    final RegExp pattern = RegExp(r'(?<=[a-z])(?=[A-Z])');
-    return split(pattern).join('-').toLowerCase();
+    return split(_kebabCasePattern).join('-').toLowerCase();
   }
 }

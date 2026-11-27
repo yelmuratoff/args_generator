@@ -1,6 +1,6 @@
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:args_generator/src/utils/helpers.dart';
 import 'package:args_generator/src/types/type_helper.dart';
 
@@ -13,13 +13,20 @@ const String enumExtensionHelperName = r'_$fromName';
 ///
 /// Returns:
 /// A string representing the name of the enum map.
-String enumMapName(InterfaceType type) => '_\$${type.element.name}EnumMap';
+String enumMapName(InterfaceType type) =>
+    '_\$${type.element.displayName}EnumMap';
+
+/// Cached regex pattern for clearing non-word characters.
+final RegExp _clearPattern = RegExp(r'[\s\d\W]+');
 
 /// A [TypeHelper] implementation for handling enum fields.
 ///
 /// This class provides logic for decoding enums from a map of arguments and
 /// encoding enums back into a map format, using the enum's string representation.
 class TypeHelperEnum extends TypeHelper {
+  @override
+  PageArgKind get kind => PageArgKind.choice;
+
   /// Determines if the given [type] is an enum.
   ///
   /// - [type]: The [DartType] to check.
@@ -31,8 +38,7 @@ class TypeHelperEnum extends TypeHelper {
 
   /// Decodes an enum value from the provided arguments.
   ///
-  /// - [field]: The [ParameterElement] representing the enum field to decode.
-  /// - [defaultValue]: The default value for the field, if any (not used here).
+  /// - [field]: The field to decode.
   ///
   /// This method checks if the field's name (converted to kebab-case) exists
   /// in the `args` map. If the key exists, it looks for a matching enum value
@@ -44,32 +50,24 @@ class TypeHelperEnum extends TypeHelper {
   /// Returns:
   /// A string representing the code to decode the enum value.
   @override
-  String decode(ParameterElement field, String? defaultValue) {
+  String decode(ArgField field) {
     final key = field.name.convertToKebabCase();
-    final enumName = field.type.getDisplayString(withNullability: true);
+    final enumName = field.type.getDisplayString();
     final isNullable = field.type.nullabilitySuffix != NullabilitySuffix.none;
     final valuesExpr =
         '${clear(enumName)}.values.where((e) => e.toString().split(\'.\').last == args[\'$key\'])';
 
     final valueExpr = isNullable
-        ? (defaultValue != null
-            ? '$valuesExpr.firstOrNull ?? $defaultValue'
-            : '$valuesExpr.firstOrNull')
+        ? '$valuesExpr.firstOrNull'
         : '$valuesExpr.first';
-    final fallbackExpr = isNullable
-        ? (defaultValue ?? 'null')
-        : (defaultValue ?? '$enumName.values.first');
+    final fallbackExpr = isNullable ? 'null' : '$enumName.values.first';
 
-    return '''
-args.containsKey('$key')
-  ? $valueExpr
-  : $fallbackExpr
-''';
+    return "args.containsKey('$key') ? $valueExpr : $fallbackExpr";
   }
 
   /// Encodes an enum field into a map format.
   ///
-  /// - [field]: The [ParameterElement] representing the enum field to encode.
+  /// - [field]: The field to encode.
   ///
   /// Uses a generated enum map to encode the enum value into its string
   /// representation. The field's name is converted to kebab-case for use
@@ -79,13 +77,10 @@ args.containsKey('$key')
   /// Returns:
   /// A string representing the code to encode the enum value.
   @override
-  String encode(ParameterElement field) {
+  String encode(ArgField field) {
     final key = field.name.convertToKebabCase();
     final name = field.name;
-    return '''
-if (${enumMapName(field.type as InterfaceType)}[$name] != null)
-  '$key': ${enumMapName(field.type as InterfaceType)}[$name]!
-''';
+    return "if (${enumMapName(field.type as InterfaceType)}[$name] != null) '$key': ${enumMapName(field.type as InterfaceType)}[$name]!";
   }
 
   /// Cleans the provided [text] by removing whitespace, digits, and non-word characters.
@@ -95,6 +90,6 @@ if (${enumMapName(field.type as InterfaceType)}[$name] != null)
   /// Returns:
   /// The cleaned string with unnecessary characters removed.
   String clear(String text) {
-    return text.replaceAll(RegExp(r'[\s\d\W]+'), '');
+    return text.replaceAll(_clearPattern, '');
   }
 }

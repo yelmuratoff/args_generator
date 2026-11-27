@@ -1,3 +1,26 @@
+## 1.3.1
+
+- Ships the `args-generator-annotations-routing` agent skill for typed routing with `schema` and `argSpecs`.
+- Fixed the package name and dependency sections in the README.
+- Added `package:args_generator_annotations/args_generator_annotations.dart`, the library named after the package. The existing `args_annotations.dart` import keeps working.
+
+## 1.3.0
+
+- Added `PageArgs`, `PageArgsSchema`, `PageArgSpec` and `PageArgKind`, the runtime types behind the generated `argSpecs` and `schema`.
+
+## 1.1.1
+
+- Enhance null and empty checks for Iterable and String type helpers
+
+## 1.1.0
+
+- Page builder replaced by aggregated builder.
+
+## 1.0.7
+
+- Added new aggregated builder.
+Please see example project for more details.
+
 ## 1.0.4
 
 - If the page has a `wrappedRoute` method, then it will be used in the `builder`.

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:args_generator_annotations/args_annotations.dart';
 import 'package:build/build.dart';
 import 'package:args_generator/src/types/type_helper.dart';
+import 'package:args_generator/src/utils/helpers.dart';
 import 'package:source_gen/source_gen.dart';
 
 /// Creates a [Builder] for the `args_generator`.
@@ -17,10 +19,7 @@ import 'package:source_gen/source_gen.dart';
 /// Returns:
 /// A [Builder] that integrates with the `build_runner` for source code generation.
 Builder pageArgsGenerator(BuilderOptions options) {
-  return PartBuilder(
-    [PageArgsGenerator()],
-    '.args.g.dart',
-  );
+  return PartBuilder([PageArgsGenerator()], '.args.g.dart');
 }
 
 /// A generator that creates argument classes for pages annotated with `@GenerateArgs`.
@@ -45,6 +44,7 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
     ConstantReader annotation,
     BuildStep buildStep,
   ) {
+    // Ensure the annotation is applied to a class.
     if (element is! ClassElement) {
       throw InvalidGenerationSourceError(
         'GenerateArgs can only be applied to classes.',
@@ -60,16 +60,17 @@ class PageArgsGenerator extends GeneratorForAnnotation<GenerateArgs> {
 class PageArgsEmitter {
   const PageArgsEmitter();
 
-  String generateForClass(ClassElement classElement) {
-    final className = classElement.name;
-    final hasRouteWrapper = classElement.methods.any(
-      (interface) {
-        return interface.name == 'wrappedRoute';
-      },
-    );
-    final argsClassName = '${className}Args';
+  /// The name of the class generated for [classElement].
+  static String argsClassNameOf(ClassElement classElement) =>
+      '${classElement.displayName}Args';
 
-    // Validate the existence of an unnamed constructor.
+  String generateForClass(ClassElement classElement) {
+    final className = classElement.displayName;
+    final hasRouteWrapper = classElement.methods.any((interface) {
+      return interface.name == 'wrappedRoute';
+    });
+    final argsClassName = argsClassNameOf(classElement);
+
     final constructor = classElement.unnamedConstructor;
     if (constructor == null) {
       throw InvalidGenerationSourceError(
@@ -78,74 +79,81 @@ class PageArgsEmitter {
       );
     }
 
-    // Collect final instance fields and constructor parameters.
-    final fields = classElement.fields
-        .where((field) => !field.isStatic && field.isFinal)
-        .toList();
-    final parameters = constructor.parameters;
-
-    final constructorParams = <String>[];
+    final parameters = constructor.formalParameters;
+    final helpers = <FormalParameterElement, TypeHelper>{};
     for (final param in parameters) {
-      final isRequired = param.isRequired;
-      final defaultValue = param.defaultValueCode;
-      for (final helper in TypeHelper.values) {
-        if (helper.matchesType(param.type)) {
-          constructorParams.add(
-            '${isRequired ? 'required ' : ''}this.${param.name}${defaultValue != null ? ' = $defaultValue' : ''}',
-          );
-        }
+      final helper = TypeHelper.forType(param.type);
+      if (helper != null) {
+        helpers[param] = helper;
+      } else if (param.isRequired) {
+        throw InvalidGenerationSourceError(
+          'The parameter `${param.displayName}` of $className has the '
+          'unsupported type `${param.type.getDisplayString()}`. Make it '
+          'optional or use one of: int, double, num, BigInt, bool, String, '
+          'DateTime, Uri, an enum, List<String> or Iterable<String>.',
+          element: param,
+        );
       }
     }
+    final supported = helpers.keys.toList(growable: false);
 
-    final fieldDeclarations = <String>[];
-    for (final param in parameters) {
-      for (final helper in TypeHelper.values) {
-        if (helper.matchesType(param.type)) {
-          fieldDeclarations.add(
-            'final ${param.type.getDisplayString(withNullability: true)} ${param.name};',
-          );
-        }
-      }
-    }
+    final constructorParams = [
+      for (final param in supported)
+        '${param.isRequired ? 'required ' : ''}this.${param.displayName}'
+            '${_defaultOf(param) != null ? ' = ${_defaultOf(param)}' : ''}',
+    ];
 
-    final tryParseBody = <String>[];
-    for (final param in parameters) {
-      final decodedValue = _decodeField(param);
-      if (decodedValue != null) {
-        tryParseBody.add('${param.name}: $decodedValue,');
-      }
-    }
+    final fieldDeclarations = [
+      for (final param in supported)
+        'final ${param.type.getDisplayString()} ${param.displayName};',
+    ];
 
-    final toArgumentsBody = <String>[];
-    for (final param in parameters) {
-      final encodedValue = _encodeField(param);
-      if (encodedValue != null) {
-        toArgumentsBody.add(encodedValue);
-      }
-    }
+    final tryParseBody = [
+      for (final param in supported)
+        '${param.displayName}: ${_decodeField(param, helpers[param]!)}',
+    ];
 
-    final uniqueEnumFields = fields
-        .where((field) => field.type.element is EnumElement)
-        .map((field) => field.type.element as EnumElement)
+    final toArgumentsBody = [
+      for (final param in supported)
+        helpers[param]!.encode(
+          ArgField(name: param.displayName, type: param.type),
+        ),
+    ];
+
+    final argSpecs = [
+      for (final param in supported) '${_argSpec(param, helpers[param]!)},',
+    ];
+
+    final builderArguments = _builderArguments(
+      classElement,
+      parameters,
+      helpers,
+    );
+
+    final uniqueEnumFields = supported
+        .map((param) => param.type.element)
+        .whereType<EnumElement>()
         .toSet();
 
-    final enumMapDeclarations = uniqueEnumFields.map((enumElement) {
-      final enumType = enumElement.name;
-      final enumValues = enumElement.fields
-          .where((e) => e.isEnumConstant)
-          .map((e) => "  $enumType.${e.name}: '${e.name}'")
-          .join(',\n');
+    final enumMapDeclarations = uniqueEnumFields
+        .map((enumElement) {
+          final enumType = enumElement.displayName;
+          final enumValues = enumElement.constants
+              .map((e) => "  $enumType.${e.displayName}: '${e.displayName}'")
+              .join(',\n');
 
-      return 'static const _\$${enumType}EnumMap = {\n$enumValues\n};';
-    }).join('\n\n');
+          return 'static const _\$${enumType}EnumMap = {\n$enumValues\n};';
+        })
+        .join('\n\n');
 
     final wrapper = hasRouteWrapper ? '.wrappedRoute(context)' : '';
+    final argsConstructor = constructorParams.isEmpty
+        ? 'const $argsClassName();'
+        : 'const $argsClassName({\n    ${constructorParams.join(',\n    ')},\n  });';
 
     return '''
-class $argsClassName {
-  const $argsClassName({
-    ${constructorParams.join(',\n    ')},
-  });
+class $argsClassName implements PageArgs {
+  $argsConstructor
 
   ${fieldDeclarations.join('\n  ')}
 
@@ -154,7 +162,7 @@ class $argsClassName {
   static $argsClassName? tryParse(Map<String, String> args) {
     try {
       return $argsClassName(
-        ${tryParseBody.join('\n        ')}
+        ${tryParseBody.join(',\n        ')}
       );
     } catch (e) {
       return null;
@@ -174,40 +182,103 @@ class $argsClassName {
     }
 
     return $className(
-      ${fields.map((f) => '${f.name}: args.${f.name},').join('\n      ')}
+      ${builderArguments.map((argument) => '$argument,').join('\n      ')}
     )$wrapper;
   }
 
   /// Converts the fields of this class into a [Map] of arguments.
+  @override
   Map<String, String> toArguments() => {
         ${toArgumentsBody.join(',\n        ')}
       };
+
+  /// Describes every argument [tryParse] reads.
+  static const List<PageArgSpec> argSpecs = [
+    ${argSpecs.join('\n    ')}
+  ];
+
+  /// Binds [tryParse], [builder] and [argSpecs] for routers and tools.
+  static const schema = PageArgsSchema<$argsClassName, BuildContext, Widget>(
+    tryParse: tryParse,
+    builder: builder,
+    argSpecs: argSpecs,
+  );
 
   $enumMapDeclarations
 }
 ''';
   }
 
-  String? _decodeField(ParameterElement param) {
-    final fieldType = param.type;
-    final defaultValue = param.defaultValueCode;
-
-    for (final helper in TypeHelper.values) {
-      if (helper.matchesType(fieldType)) {
-        return helper.decode(param, defaultValue);
-      }
+  String? _defaultOf(FormalParameterElement param) {
+    final code = param.defaultValueCode;
+    final type = param.type;
+    if (code != null && code.startsWith('.') && type is InterfaceType) {
+      return '${type.element.displayName}$code';
     }
-    return null;
+    return code;
   }
 
-  String? _encodeField(ParameterElement field) {
-    final fieldType = field.type;
+  String _decodeField(FormalParameterElement param, TypeHelper helper) {
+    final decoded = helper.decode(
+      ArgField(name: param.displayName, type: param.type),
+    );
+    final defaultValue = _defaultOf(param);
+    if (defaultValue == null) return decoded;
+    final key = param.displayName.convertToKebabCase();
+    return "args.containsKey('$key') ? ($decoded) : $defaultValue";
+  }
 
-    for (final helper in TypeHelper.values) {
-      if (helper.matchesType(fieldType)) {
-        return helper.encode(field);
+  List<String> _builderArguments(
+    ClassElement classElement,
+    List<FormalParameterElement> parameters,
+    Map<FormalParameterElement, TypeHelper> helpers,
+  ) {
+    final arguments = <String>[];
+    FormalParameterElement? skippedPositional;
+    for (final param in parameters) {
+      final name = param.displayName;
+      final isSupported = helpers.containsKey(param);
+      if (param.isNamed) {
+        if (isSupported) arguments.add('$name: args.$name');
+        continue;
       }
+      if (!isSupported) {
+        skippedPositional ??= param;
+        continue;
+      }
+      if (skippedPositional != null) {
+        throw InvalidGenerationSourceError(
+          'The positional parameter `$name` of ${classElement.displayName} '
+          'follows `${skippedPositional.displayName}`, whose type is not '
+          'supported, so the page cannot be built from arguments.',
+          element: param,
+        );
+      }
+      arguments.add('args.$name');
     }
-    return null;
+    return arguments;
+  }
+
+  String _argSpec(FormalParameterElement param, TypeHelper helper) {
+    final name = param.displayName;
+    final type = param.type;
+    final kind = helper.kind;
+    final isRequired = param.isRequired;
+    final defaultValue = _defaultOf(param);
+
+    final needsValue =
+        isRequired &&
+        !type.isNullableType &&
+        defaultValue == null &&
+        kind != PageArgKind.flag;
+    final arguments = [
+      "'${name.convertToKebabCase()}'",
+      'PageArgKind.${kind.name}',
+      if (needsValue) 'isRequired: true',
+      if (defaultValue != null) 'defaultValue: $defaultValue',
+      if (kind == PageArgKind.choice && type is InterfaceType)
+        'options: ${type.element.displayName}.values',
+    ];
+    return 'PageArgSpec(${arguments.join(', ')})';
   }
 }
