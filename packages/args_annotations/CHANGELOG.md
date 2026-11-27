@@ -1,3 +1,8 @@
+## 1.3.1
+
+- Ships the `args-generator-annotations-routing` agent skill for typed routing with `schema` and `argSpecs`.
+- Fixed the package name and dependency sections in the README.
+
 ## 1.3.0
 
 - Added `PageArgs`, `PageArgsSchema`, `PageArgSpec` and `PageArgKind`, the runtime types behind the generated `argSpecs` and `schema`.

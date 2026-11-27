@@ -1,3 +1,23 @@
+## 1.5.0
+
+- Allows `build` 5, so the generator works with `build_runner` 2.17.
+- Ships the `args-generator-usage` agent skill; see the README section "Agent skills".
+- Fixed a dot-shorthand enum default (`this.mode = .dark`) producing an `argSpecs` entry that did not compile.
+
+- Fixed a string default that spells the name of an imported class (`this.title = 'HomePage'`) being rewritten to `'_i1.HomePage'`. Import prefixes now go only on identifiers in the generated code, never inside strings or comments.
+- `tryParse` now falls back to the constructor default of an `int`, `double`, `num`, `bool`, `String` or `List` parameter when its key is missing. Before, a non-nullable parameter with a default made `tryParse` return `null`, and `bool`, `String` and `List` defaults were ignored.
+- A default applies only when the key is missing. A nullable enum with a default now reads an unknown value as `null`; it used to fall back to the default.
+- Fixed the generated constructor of a page with no supported parameter, which did not compile.
+- Fixed `builder` referencing `args.<name>` for a constructor parameter whose type is not supported, which did not compile. Optional parameters of other types are left out; a required one fails generation with an error naming it.
+- Fixed `builder` passing positional constructor parameters as named arguments.
+- `List` and `Iterable` parameters are supported only with `String` elements. A `List<int>` used to generate code that did not compile.
+- The CLI leaves the output file untouched when any library fails to generate, also with `--clean`. Before, it wrote the output without the failed pages, or deleted it.
+- The CLI exits with code 64 and a message when no include path exists, instead of throwing.
+- Added `--sdk-path`. A natively compiled CLI (`dart install`, `dart compile exe`) finds the Dart SDK through `FLUTTER_ROOT` or the `dart` on `PATH`; it used to fail because it runs outside the SDK.
+- The `build_runner` builder keeps no state between builds. A library that fails to generate or resolve is logged as a severe error, which fails the build, and the output keeps the other pages. Before, resolution failures were skipped silently.
+- Classes in the aggregated file are sorted by library and class name, so the output no longer depends on file system order.
+- Documented that Flutter apps need Flutter 3.47 or newer: earlier releases pin `meta` 1.18.0, which `analyzer` 14 cannot use.
+
 ## 1.4.0
 
 - Requires `analyzer` 14, `build` 4 and `source_gen` 4, so the generator runs alongside current `build_runner`, `freezed` and `drift_dev` on Dart 3.10+ SDKs, where `analyzer` 7 fails on dot-shorthand syntax in the Flutter SDK.
