@@ -2,6 +2,7 @@
 
 - Ships the `args-generator-annotations-routing` agent skill for typed routing with `schema` and `argSpecs`.
 - Fixed the package name and dependency sections in the README.
+- Added `package:args_generator_annotations/args_generator_annotations.dart`, the library named after the package. The existing `args_annotations.dart` import keeps working.
 
 ## 1.3.0
 
