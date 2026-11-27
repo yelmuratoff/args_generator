@@ -3,7 +3,7 @@
 
 <p align="center">
   <a href="https://pub.dev/packages/args_generator"><img src="https://img.shields.io/pub/v/args_generator.svg" alt="Generator"></a>
-  <a href="https://pub.dev/packages/args_annotations"><img src="https://img.shields.io/pub/v/args_annotations.svg" alt="Annotations"></a>
+  <a href="https://pub.dev/packages/args_generator_annotations"><img src="https://img.shields.io/pub/v/args_generator_annotations.svg" alt="Annotations"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://github.com/yelmuratoff/args_generator"><img src="https://img.shields.io/github/stars/yelmuratoff/args_generator?style=social" alt="Pub"></a>
 </p>
@@ -16,8 +16,6 @@
 # Add-on package for Args Generator. Contains annotation for generating argument classes.
 
 **Args Generator** is a Dart library designed to simplify the management of arguments passed between pages in Flutter applications. By leveraging code generation, this package creates companion argument classes for pages, ensuring type safety and reducing boilerplate.
-
-In the future, the library will be rewritten to utilize Dart macros, further enhancing performance, reducing code complexity, and integrating more seamlessly with the Dart ecosystem.
 
 ## Features
 
@@ -34,12 +32,23 @@ Add the following dependencies to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  args_generator: ^1.1.0
+  args_generator_annotations: ^1.3.0
 
 dev_dependencies:
-  build_runner: ^2.4.14
-  args_annotations: ^1.1.0
+  args_generator: ^1.5.0
 ```
+
+See the [`args_generator` README](https://pub.dev/packages/args_generator) for generating with the CLI or `build_runner`, and for the Flutter 3.47 requirement.
+
+### Agent skill
+
+From 1.3.1 the package ships [`args-generator-annotations-routing`](skills/args-generator-annotations-routing/SKILL.md), an agent skill for wiring the generated `schema` into a router and validating route arguments with `argSpecs`. Install it from your app root after `flutter pub get`:
+
+```bash
+dart run skills@ get -p args_generator_annotations -s args-generator-annotations-routing
+```
+
+Run it again after upgrading the package to refresh the installed copy.
 
 Run the command to fetch the dependencies:
 
@@ -55,9 +64,7 @@ dart pub get
 #### Example
 
 ```dart
-import 'package:args_annotations/args_annotations.dart';
-
-part 'test_page.args.g.dart';
+import 'package:args_generator_annotations/args_annotations.dart';
 
 @GenerateArgs()
 class TestPage {

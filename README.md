@@ -3,7 +3,7 @@
 
 <p align="center">
   <a href="https://pub.dev/packages/args_generator"><img src="https://img.shields.io/pub/v/args_generator.svg" alt="Generator"></a>
-  <a href="https://pub.dev/packages/args_annotations"><img src="https://img.shields.io/pub/v/args_annotations.svg" alt="Annotations"></a>
+  <a href="https://pub.dev/packages/args_generator_annotations"><img src="https://img.shields.io/pub/v/args_generator_annotations.svg" alt="Annotations"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://github.com/yelmuratoff/args_generator"><img src="https://img.shields.io/github/stars/yelmuratoff/args_generator?style=social" alt="Pub"></a>
 </p>
@@ -16,16 +16,19 @@
 
 **Args Generator** is a Dart library designed to simplify the management of arguments passed between pages in Flutter applications. By leveraging code generation, this package creates companion argument classes for pages, ensuring type safety and reducing boilerplate.
 
-In the future, the library will be rewritten to utilize Dart macros, further enhancing performance, reducing code complexity, and integrating more seamlessly with the Dart ecosystem.
-
 ## Features
 
 - **Type-Safe Argument Parsing**: Automatically generate classes for managing page arguments.
-- **Flexible Support**: Handles a variety of data types including `int`, `String`, `bool`, `double`, `DateTime`, `Uri`, and even custom enums.
-- **Optional and Default Arguments**: Supports optional fields and default values seamlessly.
+- **Flexible Support**: Handles a variety of data types including `int`, `String`, `bool`, `double`, `DateTime`, `Uri`, and even custom enums. An optional parameter of another type, such as a callback, is left out of the args class and the page keeps its default. A required one stops generation with an error that names the parameter.
+- **Optional and Default Arguments**: Supports optional fields and default values seamlessly. A default is copied into the generated file, so write it as a literal, an enum value, or a `static const` of a class (`Defaults.pageSize`); a top-level constant is not visible there.
 - **Customizable**: Allows for fine-tuning of generated code to match your requirements.
 
 ## Getting Started
+
+### Requirements
+
+- Dart 3.11 or newer.
+- In a Flutter app, Flutter 3.47 or newer. Earlier Flutter releases pin `meta` 1.18.0, which conflicts with the `analyzer` 14 that the generator depends on, so `pub get` fails.
 
 ### Installation
 
@@ -33,11 +36,11 @@ Add the following dependencies to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  args_generator: ^1.2.6
+  args_generator_annotations: ^1.3.0
 
 dev_dependencies:
-  build_runner: ^2.4.14 // Optional
-  args_annotations: ^1.2.6
+  args_generator: ^1.4.0
+  build_runner: ^2.16.1 # only for Option B
 ```
 
 Run the command to fetch the dependencies:
@@ -84,6 +87,19 @@ If you want the process to fail in CI when generation hits an error:
 dart run args_generator --fail-on-error
 ```
 
+When a library fails to generate, the CLI reports it and leaves the existing output file as it was, so a broken page never removes the routes of the others.
+
+#### Faster runs with a compiled CLI
+
+`dart run` starts the analyzer in JIT mode, which takes most of the run. A natively compiled CLI generates the same output about three times faster. `dart install` (Dart 3.10+) installs one on your `PATH`. Pin the version from your `pubspec.lock`; releases up to 1.4.0 cannot find the SDK when compiled.
+
+```bash
+dart install args_generator@<version>
+args_generator -o lib/generator/router.args.g.dart
+```
+
+A compiled CLI runs outside the Dart SDK, so it looks the SDK up from `FLUTTER_ROOT`, then from the `dart` on `PATH`. Pass `--sdk-path` to choose one.
+
 ### Option B: build_runner
 
 ```bash
@@ -96,9 +112,7 @@ dart run build_runner build --delete-conflicting-outputs
 #### Example
 
 ```dart
-import 'package:args_annotations/args_annotations.dart';
-
-part 'test_page.args.g.dart';
+import 'package:args_generator_annotations/args_annotations.dart';
 
 @GenerateArgs()
 class TestPage {
@@ -254,6 +268,19 @@ Routes.test.argumentsOf(SecondPageArgs(/* ... */)); // compile-time error
 ```
 
 Keep such helpers as extension methods on the route: a top-level `push<A>(Routes<A> route, A args)` infers `A` from both arguments and accepts any `PageArgs`.
+
+## Agent skills
+
+From 1.5.0 the package ships an agent skill, [`args-generator-usage`](skills/args-generator-usage/SKILL.md). It teaches a coding agent to annotate pages, run the generator, read the generated class, and fix pages that fail to generate. `args_generator_annotations` 1.3.1 adds `args-generator-annotations-routing` for typed routing with `schema` and `argSpecs`.
+
+Install them from your app root after `flutter pub get` (or `dart pub get`):
+
+```bash
+dart run skills@ get -p args_generator -s args-generator-usage
+dart run skills@ get -p args_generator_annotations -s args-generator-annotations-routing
+```
+
+`--agent <name>` chooses which agent's skill directory receives them. Run the same commands after upgrading either package to refresh the installed copies.
 
 ## Aggregated Builder
 
